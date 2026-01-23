@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
     const apiUrl = env.VITE_API_URL || 'http://localhost:3001';
     
     return {
-      base: '/gentrack-portal/',
+      base: '/gentrack-power-portal/',
       server: {
         port: 3000,
         host: '0.0.0.0',

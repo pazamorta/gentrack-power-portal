@@ -24,7 +24,7 @@
       // SPA Redirect for GitHub Pages to support HashRouter
       (function () {
         var path = window.location.pathname;
-        var appBase = "/gentrack-portal/";
+        var appBase = "/gentrack-power-portal/";
         // Check if we are on a known sub-path that isn't the root
         if (
           path.startsWith(appBase) &&
@@ -95,19 +95,8 @@
         -ms-overflow-style: none; /* IE and Edge */
         scrollbar-width: none; /* Firefox */
       }
-      #canvas {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 0;
-        pointer-events: none;
-      }
       #root {
         position: relative;
-        z-index: 1;
       }
     </style>
     <script type="importmap">
@@ -126,60 +115,8 @@
     <link rel="stylesheet" href="/index.css" />
   </head>
   <body>
-    <canvas id="canvas"></canvas>
     <div id="root"></div>
-    <script type="module">
-      import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js";
 
-      const canvas = document.getElementById("canvas");
-      if (canvas) {
-        // Ensure canvas has dimensions
-        const resizeCanvas = () => {
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-        };
-
-        // Set initial size
-        resizeCanvas();
-
-        // Handle resize
-        window.addEventListener("resize", resizeCanvas);
-
-        try {
-          const app = TubesCursor(canvas, {
-            tubes: {
-              colors: ["#f967fb", "#53bc28", "#6958d5"],
-              lights: {
-                intensity: 200,
-                colors: ["#83f36e", "#fe8a2e", "#ff008a", "#60aed5"],
-              },
-            },
-          });
-
-          document.body.addEventListener("click", () => {
-            const colors = randomColors(3);
-            const lightsColors = randomColors(4);
-            console.log(colors, lightsColors);
-            if (app && app.tubes) {
-              app.tubes.setColors(colors);
-              app.tubes.setLightsColors(lightsColors);
-            }
-          });
-        } catch (e) {
-          console.error("Failed to initialize TubesCursor:", e);
-        }
-      }
-
-      function randomColors(count) {
-        return new Array(count).fill(0).map(
-          () =>
-            "#" +
-            Math.floor(Math.random() * 16777215)
-              .toString(16)
-              .padStart(6, "0"),
-        );
-      }
-    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
