@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -9,55 +9,73 @@
       content="Oxygen is a leading UK utilities company in the B2B energy sector."
     />
     <title>Oxygen AI - B2B Energy Optimization</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://pazamorta.github.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://esm.sh https://esm.run https://unpkg.com https://aistudiocdn.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:; connect-src 'self' http://localhost:3001 https://*.salesforce.com https://login.salesforce.com https://pazamorta.github.io https://generativelanguage.googleapis.com; img-src 'self' data: https:;">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://pazamorta.github.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://esm.sh https://esm.run https://unpkg.com https://aistudiocdn.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:; connect-src 'self' http://localhost:3001 https://*.salesforce.com https://login.salesforce.com https://pazamorta.github.io https://generativelanguage.googleapis.com; img-src 'self' data: https:;"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM Sans:opsz,wght@9..40,100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM Sans:opsz,wght@9..40,100..900&family=Inter:wght@100..900&family=Roboto:wght@400;500;700&family=Space+Grotesk:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
     <script>
       // SPA Redirect for GitHub Pages to support HashRouter
-      (function() {
+      (function () {
         var path = window.location.pathname;
-        var appBase = '/gentrack-portal/';
+        var appBase = "/gentrack-portal/";
         // Check if we are on a known sub-path that isn't the root
-        if (path.startsWith(appBase) && path !== appBase && path !== appBase + 'index.html') {
-           var newPath = path.substring(appBase.length);
-           if (newPath.startsWith('/')) newPath = newPath.substring(1);
-           // Redirect to absolute equivalent hash path
-           var newUrl = window.location.protocol + '//' + window.location.host + appBase + '#/' + newPath + window.location.search;
-           window.location.replace(newUrl);
+        if (
+          path.startsWith(appBase) &&
+          path !== appBase &&
+          path !== appBase + "index.html"
+        ) {
+          var newPath = path.substring(appBase.length);
+          if (newPath.startsWith("/")) newPath = newPath.substring(1);
+          // Redirect to absolute equivalent hash path
+          var newUrl =
+            window.location.protocol +
+            "//" +
+            window.location.host +
+            appBase +
+            "#/" +
+            newPath +
+            window.location.search;
+          window.location.replace(newUrl);
         }
       })();
 
       // Polyfill for process.env
       window.process = {
         env: {
-          NODE_ENV: 'development'
-        }
+          NODE_ENV: "development",
+        },
       };
 
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              display: ['DM Sans', 'sans-serif'],
+              sans: ["Inter", "sans-serif"],
+              display: ["DM Sans", "sans-serif"],
             },
             colors: {
-              background: '#06040A',
-              surface: '#0F0F16',
-              primary: '#FFFFFF',
-              secondary: '#A1A1AA',
-            }
-          }
-        }
-      }
+              background: "#06040A",
+              surface: "#0F0F16",
+              primary: "#FFFFFF",
+              secondary: "#A1A1AA",
+            },
+          },
+        },
+      };
     </script>
     <style>
       html {
-        background-color: #06040A !important;
+        background-color: #06040a !important;
       }
-      html, body {
+      html,
+      body {
         height: 100%;
         margin: 0;
         padding: 0;
@@ -74,8 +92,8 @@
       }
       /* Hide scrollbar for IE, Edge and Firefox */
       body {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
       }
       #canvas {
         display: block;
@@ -92,72 +110,76 @@
         z-index: 1;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
-    "@google/genai": "https://esm.run/@google/genai",
-    "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "react/": "https://esm.sh/react@18.2.0/",
+          "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+          "@google/genai": "https://esm.run/@google/genai",
+          "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="/index.css" />
+  </head>
   <body>
     <canvas id="canvas"></canvas>
     <div id="root"></div>
-  <script type="module">
-    import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js"
+    <script type="module">
+      import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js";
 
-    const canvas = document.getElementById('canvas');
-    if (canvas) {
-      // Ensure canvas has dimensions
-      const resizeCanvas = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      };
-      
-      // Set initial size
-      resizeCanvas();
-      
-      // Handle resize
-      window.addEventListener('resize', resizeCanvas);
+      const canvas = document.getElementById("canvas");
+      if (canvas) {
+        // Ensure canvas has dimensions
+        const resizeCanvas = () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        };
 
-      try {
-        const app = TubesCursor(canvas, {
-          tubes: {
-            colors: ["#f967fb", "#53bc28", "#6958d5"],
-            lights: {
-              intensity: 200,
-              colors: ["#83f36e", "#fe8a2e", "#ff008a", "#60aed5"]
+        // Set initial size
+        resizeCanvas();
+
+        // Handle resize
+        window.addEventListener("resize", resizeCanvas);
+
+        try {
+          const app = TubesCursor(canvas, {
+            tubes: {
+              colors: ["#f967fb", "#53bc28", "#6958d5"],
+              lights: {
+                intensity: 200,
+                colors: ["#83f36e", "#fe8a2e", "#ff008a", "#60aed5"],
+              },
+            },
+          });
+
+          document.body.addEventListener("click", () => {
+            const colors = randomColors(3);
+            const lightsColors = randomColors(4);
+            console.log(colors, lightsColors);
+            if (app && app.tubes) {
+              app.tubes.setColors(colors);
+              app.tubes.setLightsColors(lightsColors);
             }
-          }
-        })
-
-        document.body.addEventListener('click', () => {
-          const colors = randomColors(3)
-          const lightsColors = randomColors(4)
-          console.log(colors, lightsColors)
-          if (app && app.tubes) {
-            app.tubes.setColors(colors)
-            app.tubes.setLightsColors(lightsColors)
-          }
-        })
-      } catch (e) {
-        console.error("Failed to initialize TubesCursor:", e);
+          });
+        } catch (e) {
+          console.error("Failed to initialize TubesCursor:", e);
+        }
       }
-    }
 
-    function randomColors (count) {
-        return new Array(count)
-            .fill(0)
-            .map(() => "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'))
-    }
-  </script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+      function randomColors(count) {
+        return new Array(count).fill(0).map(
+          () =>
+            "#" +
+            Math.floor(Math.random() * 16777215)
+              .toString(16)
+              .padStart(6, "0"),
+        );
+      }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

@@ -689,7 +689,7 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
                       ? "Listening..."
                       : "Ask a follow-up question..."
                   }
-                  className="flex-1 bg-transparent border-none outline-none px-6 text-gray-800 placeholder-gray-500 text-lg h-12 font-display"
+                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-500 text-lg outline-none font-['Roboto'] font-normal"
                   disabled={isLoading || isRecording}
                 />
 
@@ -728,10 +728,10 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
                   <button
                     onClick={() => handleSend()}
                     disabled={isLoading || (!inputValue && !isRecording)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
                       inputValue
-                        ? "bg-[#00E599] text-black hover:bg-[#00CC88] shadow-lg shadow-[#00E599]/30 transform hover:scale-105"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        ? "bg-[#00D95F] text-black hover:bg-[#00c055]"
+                        : "bg-[#00D95F] text-black hover:bg-[#00c055]"
                     }`}
                   >
                     {isLoading ? (
@@ -754,8 +754,24 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
     <div className="w-full mx-auto animate-fade-in-up delay-200 font-sans" ref={containerRef}>
       <div className="flex flex-col gap-6 p-4 rounded-3xl max-w-2xl mx-auto">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <h2 className="text-2xl md:text-3xl font-display font-bold text-white/90">
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
+          <h2 
+            className="text-white drop-shadow-md text-center"
+            style={{
+                fontFamily: 'var(--Typography-Family-Space-Grotesk, "Space Grotesk")',
+                fontSize: '30.545px',
+                fontStyle: 'normal',
+                fontWeight: 700,
+                lineHeight: '150%', // 45.818px
+                letterSpacing: '0.286px',
+                color: 'var(--Product-Content-Light, #FFF)',
+                fontFeatureSettings: "'ss01' on, 'ss04' on",
+                // @ts-ignore
+                leadingTrim: 'both',
+                // @ts-ignore
+                textEdge: 'cap'
+            }}
+          >
             How can I help you today?
           </h2>
         </div>
@@ -770,8 +786,8 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
                 accept="image/*,application/pdf"
                 className="hidden"
             />
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9F55FF] to-[#5588FF] rounded-full opacity-30 group-hover:opacity-60 transition duration-500 blur"></div>
-          <div className="relative bg-white rounded-full flex items-center p-2 pr-2 shadow-xl">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9F55FF] to-[#0d1425] rounded-full opacity-0 transition duration-500 blur"></div>
+          <div className="relative bg-white rounded-full h-[64px] flex items-center px-6 shadow-2xl transition-transform hover:scale-[1.01]">
             <input
               ref={inputRef}
               type="text"

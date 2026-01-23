@@ -8,6 +8,13 @@
   }
 }
 
+.font-roboto {
+  font-family: 'Roboto', sans-serif;
+}
+.font-space {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
