@@ -2,35 +2,23 @@ import React from 'react';
 import { ChatInterface } from './ChatInterface';
 
 export const Hero: React.FC = () => {
-  const bgMountain = "assets/login/bg-mountain.png";
-  const lightFlow1 = "assets/login/light-flow-1.png";
-  const lightFlow2 = "assets/login/light-flow-2.png";
-  const lightFlow3 = "assets/login/light-flow-3.png";
 
   return (
-    <section className="relative z-30 min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-20 overflow-hidden">
+    <section className="relative z-30 min-h-screen flex flex-col items-center justify-center px-4 pb-20 overflow-hidden">
       {/* Background Layers */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[#06040A]" /> {/* Base color */}
         
-        {/* Mountain Background - aligned to bottom */}
         <div className="absolute inset-0">
              <img 
-            src={bgMountain} 
-            alt="Mountain Landscape" 
-            className="w-full h-full object-cover object-bottom opacity-80"
+            src="assets/login/home_hero_bg.png" 
+            alt="Hero Background" 
+            className="w-full h-full object-cover object-top opacity-100"
           />
         </div>
         
-        {/* Light Flows */}
-        <div className="absolute inset-0 mix-blend-screen">
-          <img src={lightFlow1} alt="" className="absolute top-0 left-0 w-full h-full object-cover opacity-60" />
-           <img src={lightFlow2} alt="" className="absolute top-0 left-0 w-full h-full object-cover opacity-50" />
-            <img src={lightFlow3} alt="" className="absolute top-0 left-0 w-full h-full object-cover opacity-40" />
-        </div>
-        
         {/* Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#172036]/60 via-transparent to-[#0B0D15]/90 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0B0D15]/30 to-[#0B0D15]/60 pointer-events-none" />
       </div>
 
       <div className="max-w-5xl w-full text-center z-10 space-y-8 flex flex-col items-center mt-8 -translate-y-[150px]">

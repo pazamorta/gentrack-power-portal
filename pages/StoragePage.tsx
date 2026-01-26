@@ -37,7 +37,7 @@ export const StoragePage: React.FC = () => {
         <div className="absolute inset-0 bg-black/20" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 text-center text-white">
-           <h1 className="text-5xl md:text-7xl font-['Space_Grotesk'] font-bold mb-6 max-w-5xl mx-auto leading-tight drop-shadow-lg">
+           <h1 className="text-white text-center font-['Space_Grotesk'] font-bold mb-6 max-w-5xl mx-auto leading-[0.97] tracking-[-5.032px] drop-shadow-lg" style={{ fontSize: '59.146px', fontFeatureSettings: "'ss01' on, 'ss04' on" }}>
              Building resilient, clean power and energy storage solutions for business needs
            </h1>
            <p className="text-xl md:text-2xl font-light opacity-90 max-w-3xl mx-auto">
@@ -45,10 +45,16 @@ export const StoragePage: React.FC = () => {
            </p>
         </div>
         
-        {/* Mask Divider */}
-        <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
-           <img src={assets.maskGraphicLayer2} className="absolute bottom-0 left-0 w-full h-auto object-cover" alt="" />
-           <img src={assets.maskGraphic} className="relative w-full h-auto object-cover" alt="" />
+        {/* Unified Wavy Bottom Divider */}
+        <div className="absolute bottom-0 left-0 right-0 w-full leading-none z-20 -mb-px">
+          <div className="relative w-full">
+            <svg className="absolute bottom-0 left-0 w-full h-auto" viewBox="0 0 1350 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path opacity="0.4" d="M624.5 50.3562C917.7 -40.8438 1230 12.3562 1349.5 50.3562V183.356H-134V8.85644C-3.33337 60.6897 331.3 141.556 624.5 50.3562Z" fill="white"></path>
+            </svg>
+            <svg className="relative bottom-0 left-0 w-full h-auto" viewBox="0 0 1440 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path d="M715 50.3562C1008.2 -40.8438 1320.5 12.3562 1440 50.3562V183.356H-43.5V8.85644C87.1666 60.6897 421.8 141.556 715 50.3562Z" fill="white"></path>
+            </svg>
+          </div>
         </div>
       </section>
 
@@ -82,10 +88,10 @@ export const StoragePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Full Width Image Divider (Updated with Background) */}
-      <section className="relative w-full h-[510px] my-12 hidden md:block">
-         <div className="absolute inset-0 max-w-[1484px] mx-auto rounded-3xl overflow-hidden">
-            <img src={assets.wideSectionBg} className="w-full h-full object-cover" alt="Storage Infrastructure" />
+      {/* Full Width Image Divider (Updated with Design Image) */}
+      <section className="relative w-full h-[559px] my-24 overflow-hidden">
+         <div className="absolute inset-0 w-full h-full">
+            <img src={assets.circularFeature} className="w-full h-full object-cover" alt="Renewable Energy Future" />
          </div>
       </section>
 
@@ -103,7 +109,7 @@ export const StoragePage: React.FC = () => {
 
             {/* Right Content */}
             <div className="flex flex-col">
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#AE47EA] to-[#3ACDFA] font-['Roboto'] font-bold text-2xl mb-4">
+               <span className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA]" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Energy Storage & Grid Flexibility
                </span>
                <h2 className="text-4xl font-['Space_Grotesk'] font-bold mb-6 leading-tight text-gray-900">
@@ -141,19 +147,14 @@ export const StoragePage: React.FC = () => {
          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div>
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#AE47EA] to-[#3ACDFA] font-['Roboto'] font-bold text-2xl mb-4 block">
+               <span className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA] mb-4 block" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Integrated Generation + Storage for Your Business
                </span>
                <h2 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-bold mb-8 text-[#1d2130] leading-tight">
                   Solutions designed for today’s challenges
                </h2>
                
-               <div className="border-4 border-[#3ACDFA] p-8 rounded-tr-3xl rounded-bl-3xl relative">
-                  {/* T Icon Badge */}
-                  <div className="absolute -top-5 -left-1 bg-[#3ACDFA] text-white w-10 h-10 flex items-center justify-center font-bold text-xl rounded-md">
-                     T
-                  </div>
-                  
+               <div>
                   <p className="text-gray-600 mb-6 leading-relaxed">
                      Oxygen doesn’t just build assets — we deliver integrated generation and storage services that help businesses manage energy risk, improve sustainability metrics, and unlock new value streams. Our flexible approach includes:
                   </p>
@@ -199,7 +200,7 @@ export const StoragePage: React.FC = () => {
 
             {/* Text Right */}
             <div>
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#AE47EA] to-[#3ACDFA] font-['Roboto'] font-bold text-lg mb-2 block">
+               <span className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA] mb-2 block" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Why Choose Oxygen for Generation & Storage?
                </span>
                <h2 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-bold mb-8 text-gray-900">
@@ -240,29 +241,33 @@ export const StoragePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Customer Story */}
-      {/* Customer Story (Updated) */}
-      <section className="py-24 px-4 md:px-8 w-full max-w-[1440px] mx-auto">
-         <div className="relative w-full">
-            <img src={assets.customerStoryReplacement} className="w-full h-auto object-cover" alt="Customer Support" />
-         </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-4 md:px-8 max-w-7xl mx-auto">
-         <div className="bg-[#1D2130] rounded-[48px] p-12 md:p-16 text-center text-white relative overflow-hidden">
-            <div className="relative z-10">
-               <h2 className="text-3xl md:text-5xl font-['Space_Grotesk'] font-bold mb-6">
-                  Are you ready to grow your business with us?
-               </h2>
-               <p className="text-xl text-gray-300 mb-8">
-                  Talk to our AI and take your business to the next level today.
-               </p>
-               <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                  View Pricing
-               </button>
-            </div>
-         </div>
+
+      {/* CTA Section (Updated Branding) */}
+      <section className="py-24 px-4 relative overflow-hidden">
+        {/* Background Gradient */}
+        <div 
+          className="absolute inset-0 z-0 opacity-40"
+          style={{
+            background: 'radial-gradient(2762.36% 537.65% at -49.5% -250%, #D798E1 17.55%, #9BFFA5 27.56%, #AED3FF 49.89%, #C9D4EF 56.53%, #CACFFA 65.69%)',
+            filter: 'blur(100px)',
+          }}
+        />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-[#1D2130] text-5xl md:text-6xl font-['Space_Grotesk'] font-bold mb-6 leading-[0.97] tracking-[-4px]" style={{ fontFeatureSettings: "'ss01' on, 'ss04' on" }}>
+            Are you ready to grow your<br/>business with us?
+          </h2>
+          <p className="text-gray-600 text-lg mb-8 font-roboto font-medium opacity-80">Talk to our AI and take your business to the next level today.</p>
+          <button 
+            className="inline-flex items-center justify-center px-10 py-4 rounded-full text-white font-bold transition-all hover:opacity-90 hover:scale-105 shadow-lg"
+            style={{
+              background: '#3ACDFA',
+              fontSize: '18px',
+            }}
+          >
+            Get a quote now
+          </button>
+        </div>
       </section>
 
       {/* Footer Section (Oxygen Design) */}

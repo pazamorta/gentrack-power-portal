@@ -13,10 +13,17 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+            secure: false,
+          }
+        }
       },
       plugins: [react()],
       define: {
-      'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://localhost:3001'),
+      'process.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || ''),
       'process.env.FRONTEND_URL': JSON.stringify(env.FRONTEND_URL || 'http://localhost:3000'),
     },
       resolve: {

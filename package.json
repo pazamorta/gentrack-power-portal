@@ -12,7 +12,7 @@
     "deploy": "npm run build && cp dist/index.html dist/404.html && gh-pages -d dist"
   },
   "dependencies": {
-    "@google/genai": "latest",
+    "@google/generative-ai": "^0.24.1",
     "@types/chroma-js": "^3.1.2",
     "chroma-js": "^3.2.0",
     "cors": "^2.8.5",

@@ -24,7 +24,21 @@ const assets = {
 
 export const AboutPage: React.FC = () => {
   return (
-    <>
+    <div className="bg-white min-h-screen text-gray-900 font-['Roboto'] selection:bg-[#2CD8A6]/30 relative overflow-hidden">
+      {/* Decorative Radial Gradient Background */}
+      <div 
+        className="absolute pointer-events-none z-0"
+        style={{
+          width: '1977px',
+          height: '1154px',
+          borderRadius: '1977px',
+          background: 'radial-gradient(2762.36% 537.65% at -49.5% -250%, #D798E1 17.55%, #9BFFA5 27.56%, #AED3FF 49.89%, #C9D4EF 56.53%, #CACFFA 65.69%)',
+          filter: 'blur(200px)',
+          opacity: 0.5,
+          top: '10%',
+          left: '-400px',
+        }}
+      />
       {/* Hero Section */}
       <section className="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
@@ -92,13 +106,16 @@ export const AboutPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Wave */}
-        <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-none z-20">
-          <svg className="relative block w-full h-[120px] md:h-[180px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-              <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="#FFFFFF"></path>
-              <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="#FFFFFF"></path>
-              <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="#FFFFFF"></path>
-          </svg>
+        {/* Unified Wavy Bottom Divider */}
+        <div className="absolute bottom-0 left-0 right-0 w-full leading-none z-20 -mb-px">
+          <div className="relative w-full">
+            <svg className="absolute bottom-0 left-0 w-full h-auto" viewBox="0 0 1350 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path opacity="0.4" d="M624.5 50.3562C917.7 -40.8438 1230 12.3562 1349.5 50.3562V183.356H-134V8.85644C-3.33337 60.6897 331.3 141.556 624.5 50.3562Z" fill="white"></path>
+            </svg>
+            <svg className="relative bottom-0 left-0 w-full h-auto" viewBox="0 0 1440 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path d="M715 50.3562C1008.2 -40.8438 1320.5 12.3562 1440 50.3562V183.356H-43.5V8.85644C87.1666 60.6897 421.8 141.556 715 50.3562Z" fill="white"></path>
+            </svg>
+          </div>
         </div>
       </section>
 
@@ -176,7 +193,7 @@ export const AboutPage: React.FC = () => {
       {/* Power networks & tailored solutions */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <p className="text-[#3ACDFA] font-bold mb-2 font-roboto tracking-wide uppercase text-sm">Power networks & tailored solutions</p>
+          <p className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA] mb-2" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Power networks & tailored solutions</p>
           <h2 
             className="text-[#1D2130] mb-12"
             style={{
@@ -317,7 +334,7 @@ export const AboutPage: React.FC = () => {
       {/* Powering Progress Section */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <p className="text-[#3ACDFA] font-bold mb-2 font-roboto tracking-wide uppercase text-sm">Why Oxygen?</p>
+          <p className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA] mb-2" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Why Oxygen?</p>
           <h2 
             className="text-[#1D2130] mb-12 max-w-2xl"
             style={{
@@ -472,32 +489,30 @@ export const AboutPage: React.FC = () => {
         </div>
       </section>
  
-      {/* CTA Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-white to-blue-50/50">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 
-            className="text-[#1D2130] mb-6"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: '48px',
-              fontWeight: 700,
-            }}
-          >
+      {/* CTA Section (Updated Branding) */}
+      <section className="py-24 px-4 relative overflow-hidden">
+        {/* Background Gradient */}
+        <div 
+          className="absolute inset-0 z-0 opacity-40"
+          style={{
+            background: 'radial-gradient(2762.36% 537.65% at -49.5% -250%, #D798E1 17.55%, #9BFFA5 27.56%, #AED3FF 49.89%, #C9D4EF 56.53%, #CACFFA 65.69%)',
+            filter: 'blur(100px)',
+          }}
+        />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-[#1D2130] text-5xl md:text-6xl font-['Space_Grotesk'] font-bold mb-6 leading-[0.97] tracking-[-4px]" style={{ fontFeatureSettings: "'ss01' on, 'ss04' on" }}>
             Are you ready to grow your<br/>business with us?
           </h2>
-          <p className="text-gray-500 mb-8 font-roboto">Talk to our AI and take your business to the next level today.</p>
+          <p className="text-gray-600 text-lg mb-8 font-roboto font-medium opacity-80">Talk to our AI and take your business to the next level today.</p>
           <Link 
             to="/get-started"
-            className="inline-flex items-center justify-center px-10 py-3 rounded-full text-white font-medium transition-all hover:opacity-90 hover:scale-105"
+            className="inline-flex items-center justify-center px-10 py-4 rounded-full text-white font-bold transition-all hover:opacity-90 hover:scale-105 shadow-lg"
             style={{
               background: '#3ACDFA',
-              fontFamily: "'Roboto', sans-serif",
-              fontSize: '16px',
-              fontWeight: 700,
-              boxShadow: '0 4px 20px rgba(58, 205, 250, 0.3)',
+              fontSize: '18px',
             }}
           >
-            Get started
+            Get a quote now
           </Link>
         </div>
       </section>
@@ -573,6 +588,6 @@ export const AboutPage: React.FC = () => {
             <div className="h-px bg-white/10 flex-grow"></div>
          </div>
       </section>
-    </>
+    </div>
   );
 };

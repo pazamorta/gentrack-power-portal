@@ -69,8 +69,8 @@ const pricingPlans = [
 ];
 
 const faqs = [
-  { q: "What services does Oxygen provide?", a: "From renewable energy sourcing and energy efficiency consulting to smart grid integration and sustainability planning, we work to help companies reduce costs, lower their carbon footprint, and future-proof their energy strategy." },
-  { q: "How can I become an Oxygen partner?", a: "Simply click the 'Get a strict quote' button or contact our sales team to discuss partnership opportunities." },
+  { q: "What services does Oxygen provide?", a: "From renewable energy sourcing and energy efficiency consulting to smart grid integration and sustainability planning, our goal is to help companies reduce costs, lower their carbon footprint, and future-proof their energy strategy." },
+  { q: "How can I become an Oxygen partner?", a: "Simply click the 'Get a quote now' button or contact our sales team to discuss partnership opportunities." },
   { q: "What industries does Oxygen serve?", a: "We serve a wide range of industries including manufacturing, retail, logistics, and public sector organizations." },
   { q: "How does Oxygen promote sustainability?", a: "We prioritize 100% renewable energy sources and help clients implement circular economy practices." }
 ];
@@ -78,16 +78,16 @@ const faqs = [
 const FAQItem = ({ q, a }: { q: string, a: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+    <div className="bg-white rounded-[32px] shadow-sm overflow-hidden mb-4">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-6 text-left"
+        className="w-full flex items-center justify-between p-8 text-left"
       >
-        <span className="font-bold text-gray-900 text-lg">{q}</span>
-        {isOpen ? <Minus className="text-gray-400" /> : <Plus className="text-gray-400" />}
+        <span className="font-bold text-gray-900 text-xl">{q}</span>
+        {isOpen ? <Minus className="text-gray-900 w-6 h-6" /> : <Plus className="text-gray-900 w-6 h-6" />}
       </button>
       {isOpen && (
-        <div className="px-6 pb-6 text-gray-600 leading-relaxed">
+        <div className="px-8 pb-8 text-gray-600 leading-relaxed text-[16px]">
           {a}
         </div>
       )}
@@ -100,27 +100,45 @@ export const SolutionsPage: React.FC = () => {
   const [activeSegment, setActiveSegment] = useState('SME');
 
   return (
-    <div className="bg-white min-h-screen text-gray-900 font-['Roboto'] selection:bg-[#2CD8A6]/30">
+    <div className="bg-white min-h-screen text-gray-900 font-['Roboto'] selection:bg-[#2CD8A6]/30 relative overflow-hidden">
+      {/* Decorative Radial Gradient Background */}
+      <div 
+        className="absolute pointer-events-none z-0"
+        style={{
+          width: '1977px',
+          height: '1154px',
+          borderRadius: '1977px',
+          background: 'radial-gradient(2762.36% 537.65% at -49.5% -250%, #D798E1 17.55%, #9BFFA5 27.56%, #AED3FF 49.89%, #C9D4EF 56.53%, #CACFFA 65.69%)',
+          filter: 'blur(200px)',
+          opacity: 0.6,
+          top: '-200px',
+          left: '-500px',
+        }}
+      />
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center overflow-hidden">
         <img src={assets.heroLandscape} alt="Green Energy Landscape" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/20" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 text-center text-white">
-           <h1 className="text-[59.146px] font-['Space_Grotesk'] font-bold mb-6 max-w-5xl mx-auto leading-[0.97] tracking-[-5.032px] drop-shadow-lg" style={{ fontFeatureSettings: "'ss01' on, 'ss04' on" }}>
+           <h1 className="text-white text-center font-['Space_Grotesk'] font-bold mb-6 max-w-5xl mx-auto leading-[0.97] tracking-[-5.032px] drop-shadow-lg" style={{ fontSize: '59.146px', fontFeatureSettings: "'ss01' on, 'ss04' on" }}>
              Integrated Energy Solutions<br />for a Sustainable Future
            </h1>
            <p className="text-xl md:text-2xl font-light opacity-90 max-w-2xl mx-auto">
-             Empowering businesses with reliable, low-carbon and cost-effective energy strategies.
+             Supporting businesses with reliable, low-carbon and future-ready energy infrastructure.
            </p>
         </div>
         
-        {/* Mask Divider */}
-        <div className="absolute bottom-0 left-0 w-full z-20 pointer-events-none">
-           {/* Vector 19 (Layer 2) - Behind, slightly offset or different opacity if needed by design, though SVG has opacity 0.4 */}
-           <img src={assets.maskGraphicLayer2} className="absolute bottom-0 left-0 w-full h-auto object-cover" alt="" />
-           {/* Vector 18 (Layer 1) - Front */}
-           <img src={assets.maskGraphic} className="relative w-full h-auto object-cover" alt="" />
+        {/* Unified Wavy Bottom Divider */}
+        <div className="absolute bottom-0 left-0 right-0 w-full leading-none z-20 -mb-px">
+          <div className="relative w-full">
+            <svg className="absolute bottom-0 left-0 w-full h-auto" viewBox="0 0 1350 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path opacity="0.4" d="M624.5 50.3562C917.7 -40.8438 1230 12.3562 1349.5 50.3562V183.356H-134V8.85644C-3.33337 60.6897 331.3 141.556 624.5 50.3562Z" fill="white"></path>
+            </svg>
+            <svg className="relative bottom-0 left-0 w-full h-auto" viewBox="0 0 1440 184" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ height: '184px', display: 'block' }}>
+              <path d="M715 50.3562C1008.2 -40.8438 1320.5 12.3562 1440 50.3562V183.356H-43.5V8.85644C87.1666 60.6897 421.8 141.556 715 50.3562Z" fill="white"></path>
+            </svg>
+          </div>
         </div>
       </section>
 
@@ -133,10 +151,10 @@ export const SolutionsPage: React.FC = () => {
                 One partner, multiple energy capabilities
               </h2>
               <p className="text-gray-600 text-lg leading-relaxed mb-8">
-                Oxygen delivers end-to-end energy solutions tailored to meet the complex needs of modern businesses. From energy supply and modernization to innovative generation, storage and trading, we help you procure clean power, optimize costs and accelerate your journey to Net Zero.
+                Oxygen delivers end-to-end energy solutions designed to meet the evolving needs of modern businesses. From energy supply and market access to renewable generation, storage and green gas, we help organisations reduce risk, optimise costs and accelerate their transition to a low-carbon future.
               </p>
               <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                Get a quick quote
+                Get a quote now
               </button>
            </div>
            <div className="relative flex justify-center">
@@ -174,21 +192,58 @@ export const SolutionsPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-white rounded-[32px] p-8 md:p-12 shadow-sm">
                 <img src={assets.officeTeam} alt="Office" className="rounded-2xl w-full h-[400px] object-cover shadow-md" />
                 <div>
-                   <span className="text-[#A55FEE] font-bold">Small & Medium Enterprise</span>
+                   <span className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA]" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Small & Medium Enterprise</span>
                    <h3 className="text-4xl font-['Space_Grotesk'] font-bold mb-6 mt-2">Business Energy Solutions</h3>
-                   <p className="text-gray-600 mb-6">
-                     Oxygen provides tailored electricity supply solutions for businesses, large and small. We offer reliable supply, accurate billing and expert account management alongside energy efficiency advice.
+                   
+                   <p className="text-gray-600 mb-6 font-medium">
+                     Oxygen provides tailored electricity and gas solutions for businesses, helping you control costs, reduce carbon impact, and stay competitive in a rapidly changing energy market.
                    </p>
-                   <ul className="space-y-3 mb-8">
-                      {['Clean energy consumption and carbon reporting', 'Zero cost, app-first interface upgrades', 'Total sustainability strategy and net zero ambitions'].map(item => (
-                        <li key={item} className="flex items-start gap-3 text-sm text-gray-700">
-                           <div className="mt-1 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
-                           {item}
-                        </li>
-                      ))}
-                   </ul>
-                   <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all">
-                      Get a strict quote
+                   
+                   <div className="space-y-6">
+                     <div>
+                       <p className="text-gray-600 mb-3 text-sm">
+                         Whether you’re looking for fixed rates for budget certainty or flexible contracts to take advantage of market opportunities, our experts support you based on:
+                       </p>
+                       <ul className="space-y-2">
+                          {[
+                            'Your energy consumption and business objectives',
+                            'Your risk appetite and in-house expertise',
+                            'Your sustainability strategy and net-zero ambitions'
+                          ].map(item => (
+                            <li key={item} className="flex items-start gap-3 text-sm text-gray-700">
+                               <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+                               <span className="font-bold">{item}</span>
+                            </li>
+                          ))}
+                       </ul>
+                     </div>
+
+                     <div>
+                       <p className="text-gray-600 mb-3 text-sm">
+                         Our solutions include:
+                       </p>
+                       <ul className="space-y-2">
+                          {[
+                            'Fixed and flexible electricity and gas contracts',
+                            'Market access and energy optimisation options',
+                            'Tailored quotes to match your operational needs',
+                            '100% renewable electricity and green gas solutions'
+                          ].map(item => (
+                            <li key={item} className="flex items-start gap-3 text-sm text-gray-700">
+                               <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+                               <span className="font-bold">{item}</span>
+                            </li>
+                          ))}
+                       </ul>
+                     </div>
+
+                     <p className="text-gray-600 text-sm leading-relaxed">
+                       With Oxygen, comparing suppliers, switching contracts, and managing your energy is simple — backed by expert insight and dedicated support.
+                     </p>
+                   </div>
+
+                   <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all mt-8">
+                      Get a quote now
                    </button>
                 </div>
             </div>
@@ -302,7 +357,7 @@ export const SolutionsPage: React.FC = () => {
       <section className="py-24 px-4 md:px-8 max-w-7xl mx-auto">
          <div className="flex justify-between items-end mb-12">
             <div>
-               <span className="text-[#3ACDFA] font-bold uppercase tracking-wider text-sm">Energizing Your Business Responsibly</span>
+                <span className="font-['Roboto'] text-2xl font-bold leading-[1.2] bg-clip-text text-transparent bg-gradient-to-br from-[#AE47EA] to-[#3ACDFA]" style={{ background: 'linear-gradient(54deg, #AE47EA 15.02%, #3ACDFA 82.83%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Energizing Your Business Responsibly</span>
                <h2 className="text-4xl font-['Space_Grotesk'] font-bold mt-2">Smart Solutions for Every Enterprise</h2>
             </div>
             <button className="px-6 py-2 bg-[#DAEDFF] text-[#1d2130] rounded-full text-sm font-bold hover:bg-[#cce5ff]">
@@ -327,20 +382,35 @@ export const SolutionsPage: React.FC = () => {
          </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-24 px-4 md:px-8 max-w-7xl mx-auto bg-[#F5F7FA] rounded-[48px] flex flex-col lg:flex-row gap-16">
-         <div className="lg:w-1/3">
-            <h2 className="text-4xl font-['Space_Grotesk'] font-bold mb-6 text-gray-900">
-               Frequently Asked Questions
+      <section 
+        className="relative py-24 px-4 md:px-8 max-w-7xl mx-auto rounded-[48px] flex flex-col lg:flex-row gap-16 overflow-hidden"
+        style={{ 
+          borderBottom: '20px solid transparent'
+        }}
+      >
+         {/* Background Layer (Base Color + Gradient) */}
+         <div className="absolute inset-0 -z-10 bg-[#F0F2FE]" />
+         <div 
+           className="absolute inset-0 -z-10 pointer-events-none"
+           style={{ 
+             background: 'radial-gradient(2162.36% 517.65% at -10% 110%, rgb(215, 152, 225) 17.55%, rgb(155, 255, 165) 27.56%, rgb(174, 211, 255) 49.89%, rgb(201, 212, 239) 56.53%, rgb(202, 207, 250) 65.69%)', 
+             filter: 'blur(100px)',
+             opacity: 1
+           }}
+         />
+         
+         <div className="relative z-10 lg:w-1/3">
+            <h2 className="text-[52px] font-['Space_Grotesk'] font-bold mb-8 text-gray-900 leading-[1.1]">
+               Frequently Asked<br/>Questions
             </h2>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-               Below you'll find answers to some of the most common questions from our B2B partners. If you don't see what you're looking for, feel free to reach out to our team directly.
+            <p className="text-gray-600 mb-10 leading-[1.6] text-[18px]">
+               Below, you'll find answers to some of the most common questions from our B2B partners. If you don't see what you're looking for, feel free to reach out to our team directly—we're always happy to help.
             </p>
-            <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg">
-               Let's discuss
+            <button className="px-10 py-4 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all text-[18px]">
+               Let's chat now
             </button>
          </div>
-         <div className="lg:w-2/3">
+         <div className="relative z-10 lg:w-2/3">
             {faqs.map((faq, i) => (
                <FAQItem key={i} q={faq.q} a={faq.a} />
             ))}
@@ -349,7 +419,7 @@ export const SolutionsPage: React.FC = () => {
 
 
 
-      {/* Footer Section (Oxygen Design) */}
+
       <section className="bg-[#1d2130] text-white py-16 px-4 md:px-8">
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 pb-12 mb-12">
             {/* Column 1: Company */}

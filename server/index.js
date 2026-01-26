@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 dotenv.config({ path: '.env.local' });
@@ -795,76 +795,45 @@ app.post('/api/ai/generate', async (req, res) => {
             return res.status(500).json({ error: 'Server misconfiguration: GEMINI_API_KEY missing' });
         }
 
-        const genAI = new GoogleGenAI({ apiKey });
-        
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const modelInstance = genAI.getGenerativeModel({ 
+            model: model,
+            systemInstruction: systemInstruction 
+        });
+
         const parts = [];
 
-        // Handle Media Input (Base64) - supports image or audio
-        const mediaInput = media || image; // Support both naming conventions
-        if (mediaInput) {
-             if (mediaInput.mimeType && mediaInput.data) {
-                parts.push({ 
-                    inlineData: { 
-                        mimeType: mediaInput.mimeType, 
-                        data: mediaInput.data 
-                    } 
-                });
-            }
+        // Add media part if available
+        const mediaInput = media || image;
+        if (mediaInput && mediaInput.mimeType && mediaInput.data) {
+            parts.push({ 
+                inlineData: { 
+                    mimeType: mediaInput.mimeType, 
+                    data: mediaInput.data 
+                } 
+            });
         }
         
-        // Handle Text Prompt
         if (prompt) {
             parts.push({ text: prompt });
         }
 
-        const contents = [{ role: 'user', parts }];
-
-        const generateOptions = {
-            model: model,
-            contents: contents,
-            config: {} // Initialize config
-        };
-
-        if (systemInstruction) {
-            generateOptions.config.systemInstruction = systemInstruction;
-        }
-        
-        // Support TTS specific configs
-        if (responseModalities) {
-            generateOptions.config.responseModalities = responseModalities;
-        }
-        if (speechConfig) {
-            generateOptions.config.speechConfig = speechConfig;
-        }
-
         console.log(`🤖 AI Request: ${model} | Media: ${!!mediaInput}`);
 
-        const result = await genAI.models.generateContent(generateOptions);
-        
-        // Extract text safely
-        // Extract text safely
-        let text = "";
-        try {
-            if (result.text && typeof result.text === 'function') {
-                text = result.text();
+        const result = await modelInstance.generateContent({
+            contents: [{ role: 'user', parts }],
+            generationConfig: {
+                responseModalities: responseModalities,
+                speechConfig: speechConfig
             }
-        } catch (e) {
-            console.warn("result.text() failed, trying candidates fallback");
-        }
+        });
 
-        // Fallback: Extract from candidates if text is empty
-        if (!text && result.candidates && result.candidates.length > 0) {
-            const firstCandidate = result.candidates[0];
-            if (firstCandidate.content && firstCandidate.content.parts && firstCandidate.content.parts.length > 0) {
-               text = firstCandidate.content.parts.map(p => p.text).join('');
-            }
-        }
+        const response = result.response;
+        const text = response.text() || "";
 
-        // Return full candidates to support Audio/Binary extraction on frontend
-        // We serialize the response to JSON
         res.json({ 
             text,
-            candidates: result.candidates 
+            candidates: response.candidates 
         });
 
     } catch (error) {

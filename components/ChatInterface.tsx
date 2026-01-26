@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Link } from 'react-router-dom';
 import { ArrowUp, Mic, Square, Loader2, Volume2, Paperclip, FileText, X, Minimize2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { salesforceService, ParsedInvoiceData } from '../services/salesforce';
@@ -49,6 +51,7 @@ function decodeAudioData(
 export const ChatInterface: React.FC = () => {
   // Chat mode state
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -372,8 +375,8 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
     setChatHistory(prev => [...prev, userMessage]);
     
     // Always trigger full-screen mode when sending a message
-    // (whether it's the first message or continuing after minimize)
     setIsFullScreen(true);
+    setHasInteracted(true);
 
     setIsLoading(true);
     setResponse(null);
@@ -549,26 +552,39 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
 
   // Full-screen chat mode
   if (isFullScreen) {
-    return (
-      <div className="fixed inset-0 z-40 bg-gradient-to-br from-[#0A0F1E] via-[#0D1425] to-[#0A0F1E] animate-in fade-in duration-500">
-        {/* Floating Minimize Button */}
-        <button
-          onClick={() => setIsFullScreen(false)}
-          className="fixed top-20 right-6 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all text-gray-300 hover:text-white shadow-lg"
-          title="Minimize chat"
-        >
-          <Minimize2 size={20} />
-        </button>
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-[#171B26] flex flex-col items-center justify-start overflow-hidden">
+        {/* Custom Header in Full Screen */}
+        <div className="w-full h-24 flex items-center justify-between px-8 bg-[#171B26] sticky top-0 z-50">
+           <div className="flex items-center">
+              <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" width="123" height="44" viewBox="0 0 123 44" fill="none" className="h-8 w-auto">
+                  <path d="M47.302 17.8207H42.3246L38.5177 23.4326L34.7436 17.8207H29.8755L35.9141 26.2003L29.6568 34.5252H34.492L38.6271 28.8148L42.8169 34.5252H47.6193L41.2197 25.8721L47.302 17.8207Z" fill="white"/>
+                  <path d="M94.812 17.7765C89.9877 17.7765 86.2683 21.4302 86.2683 26.3639C86.2683 31.2976 89.922 34.9514 95.5996 34.9514C98.4767 34.9514 100.763 34.295 101.955 33.6824V30.1927C100.796 30.8819 98.3016 31.5601 95.9059 31.5601C92.7554 31.5601 90.7097 29.9302 90.6112 27.1844H102.546C102.546 26.889 102.645 26.167 102.645 25.4231C102.645 21.3755 99.9426 17.7874 94.812 17.7874V17.7765ZM90.6003 24.8543C90.8081 22.7977 92.274 20.9708 94.7354 20.9708C97.1968 20.9708 98.6298 22.7977 98.597 24.8543H90.6003Z" fill="white"/>
+                  <path d="M116.21 17.7765C112.961 17.7765 110.707 19.9643 110.018 21.463H109.952C109.952 21.3318 110.083 20.9051 110.083 20.2925L109.985 18.2031H106.123V34.5247H110.291V26.4295C110.291 23.5525 112.304 21.3974 115.148 21.3974C117.468 21.3974 117.949 23.093 117.949 24.9855V34.5247H122.117V24.3073C122.117 20.0956 120.235 17.7765 116.199 17.7765H116.21Z" fill="white"/>
+                  <path d="M62.5735 17.8207L57.7164 29.5915L52.9905 17.8207H48.4725L55.4519 33.8251L51.0652 43.1783H55.3863L66.7851 17.8207H62.5735Z" fill="white"/>
+                  <path d="M13.6086 8.56558C6.1042 8.56558 0 14.6698 0 22.1742C0 29.6787 6.1042 35.7829 13.6086 35.7829C21.1131 35.7829 27.2173 29.6787 27.2173 22.1742C27.2173 14.6698 21.1131 8.56558 13.6086 8.56558ZM13.6086 31.4071C8.51087 31.4071 4.37577 27.261 4.37577 22.1742C4.37577 17.0874 8.52181 12.9413 13.6086 12.9413C18.6955 12.9413 22.8415 17.0874 22.8415 22.1742C22.8415 27.261 18.6955 31.4071 13.6086 31.4071Z" fill="white"/>
+                  <path d="M76.029 17.4156C71.8282 17.4156 68.4151 20.8287 68.4151 25.0295C68.4151 26.3641 68.7652 27.6221 69.3778 28.716C65.9647 29.4709 63.4049 32.512 63.4049 36.1439C63.4049 40.3447 66.818 43.7578 71.0187 43.7578C75.2195 43.7578 78.6326 40.3447 78.6326 36.1439C78.6326 34.8093 78.2825 33.5513 77.6699 32.4573C81.083 31.7025 83.6428 28.6613 83.6428 25.0295C83.6428 20.8287 80.2297 17.4156 76.029 17.4156ZM71.0187 40.4869C68.623 40.4869 66.6867 38.5396 66.6867 36.1549C66.6867 33.7701 68.6339 31.8228 71.0187 31.8228C73.4035 31.8228 75.3507 33.7701 75.3507 36.1549C75.3507 38.5396 73.4035 40.4869 71.0187 40.4869ZM76.029 29.3615C73.6333 29.3615 71.697 27.4143 71.697 25.0295C71.697 22.6447 73.6442 20.6975 76.029 20.6975C78.4138 20.6975 80.361 22.6447 80.361 25.0295C80.361 27.4143 78.4138 29.3615 76.029 29.3615Z" fill="white"/>
+                  <path d="M40.618 7.61398C40.618 3.41324 37.2049 0.000144958 33.0042 0.000144958C28.8034 0.000144958 25.3903 3.41324 25.3903 7.61398C25.3903 11.8147 28.8034 15.2278 33.0042 15.2278C37.2049 15.2278 40.618 11.8147 40.618 7.61398ZM28.6721 7.61398C28.6721 5.21825 30.6194 3.28197 33.0042 3.28197C35.389 3.28197 37.3362 5.22919 37.3362 7.61398C37.3362 9.99878 35.389 11.946 33.0042 11.946C30.6194 11.946 28.6721 9.99878 28.6721 7.61398Z" fill="white"/>
+                </svg>
+              </Link>
+           </div>
+           <button
+             onClick={() => setIsFullScreen(false)}
+             className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all text-white shadow-lg"
+             title="Close chat"
+           >
+             <X size={24} />
+           </button>
+        </div>
 
         {/* Chat Messages */}
         <div 
           ref={chatMessagesRef}
-          className={`absolute top-24 left-0 right-0 overflow-y-auto px-4 py-6 ${
-            followUpQuestions.length > 0 ? 'bottom-56' : 'bottom-32'
-          }`}
+          className={`flex-1 w-full overflow-y-auto px-4 py-8 custom-scrollbar`}
           style={{ scrollBehavior: 'smooth' }}
         >
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6 pb-20">
             {chatHistory.map((message, index) => (
               <div
                 key={message.id}
@@ -585,50 +601,57 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
                     }`}
                   >
                     {message.role === 'assistant' && (
-                      <div className="flex items-center gap-2 mb-2 text-[#69F0C9] text-xs font-bold uppercase tracking-wider">
-                        Oxygen AI
+                      <div className="flex items-center gap-2 mb-3 text-[#69F0C9] text-[10px] font-bold uppercase tracking-widest border-b border-white/5 pb-2">
+                        OXYGEN AI AGENT
                         {isPlaying && index === chatHistory.length - 1 && (
                           <Volume2 size={12} className="animate-pulse" />
                         )}
                       </div>
                     )}
-                    <div className={`text-base leading-relaxed text-left ${message.role === 'user' ? 'font-medium' : ''}`}>
+                    <div className={`text-base leading-relaxed text-left ${message.role === 'user' ? 'font-bold' : ''}`}>
                       {message.role === 'assistant' ? (
-                        <ReactMarkdown
-                          components={{
-                            strong: ({node, ...props}) => <span className="font-bold text-white" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2" {...props} />,
-                            li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                            a: ({node, ...props}) => <a className="text-[#00E599] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
+                        <div className="space-y-4">
+                          <ReactMarkdown
+                            components={{
+                              strong: ({node, ...props}) => <span className="font-bold text-white" {...props} />,
+                              p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                              ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2" {...props} />,
+                              li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                              a: ({node, ...props}) => <a className="text-[#00E599] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                          
+                          {/* Design Element: Action Card inside AI response */}
+                          {message.content.includes('sign in') && (
+                            <div className="mt-4 p-4 rounded-xl bg-black/20 border border-white/5 flex items-center justify-between">
+                               <span className="text-sm font-medium">If you're already a customer, sign in to receive tailored support.</span>
+                               <div className="flex gap-2">
+                                  <button className="px-4 py-1.5 rounded-full bg-white/5 text-xs font-bold hover:bg-white/10 transition-colors">I'm not</button>
+                                  <button className="px-4 py-1.5 rounded-full bg-[#3ACDFA] text-black text-xs font-bold hover:opacity-90 transition-opacity">Login</button>
+                               </div>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         message.content
                       )}
                     </div>
                   </div>
-                  {/* Timestamp */}
-                  <div className={`text-xs text-gray-500 mt-1 px-2 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
                 </div>
               </div>
             ))}
             
-            {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2">
                 <div className="max-w-[80%]">
                   <div className="bg-surface/80 backdrop-blur-md border border-white/10 rounded-2xl p-5">
-                    <div className="flex items-center gap-2 mb-2 text-[#69F0C9] text-xs font-bold uppercase tracking-wider">
-                      Oxygen AI
+                    <div className="flex items-center gap-2 mb-2 text-[#69F0C9] text-[10px] font-bold uppercase tracking-widest">
+                      OXYGEN AI AGENT
                     </div>
                     <div className="flex items-center gap-2 text-gray-400">
                       <Loader2 size={16} className="animate-spin" />
-                      <span className="text-sm">Thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -637,115 +660,66 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
           </div>
         </div>
 
-        {/* Follow-up Questions */}
-        {followUpQuestions.length > 0 && !isLoading && (
-          <div className="absolute bottom-24 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-[#0A0F1E] via-[#0A0F1E] to-transparent pt-6">
-            <div className="max-w-4xl mx-auto">
-              <p className="text-sm text-gray-400 mb-3 px-2">Related questions:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Bottom Input Area */}
+        <div className="w-full bg-[#171B26] border-t border-white/5 p-6 z-50">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {followUpQuestions.length > 0 && !isLoading && (
+              <div className="flex flex-wrap gap-2 mb-4">
                 {followUpQuestions.map((question, index) => (
                   <button
                     key={index}
                     onClick={() => handleQuickQuestion(question)}
-                    className="bg-surface/50 border border-white/10 rounded-xl p-4 text-left hover:bg-surface/70 hover:border-white/20 transition-all duration-300 text-gray-200 hover:text-white group"
+                    className="bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm hover:bg-white/10 transition-all text-gray-300 hover:text-white"
                   >
-                    <p className="text-sm font-display font-medium group-hover:translate-x-1 transition-transform">
-                      {question}
-                    </p>
+                    {question}
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Input Area */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/20 backdrop-blur-md border-t border-white/10 p-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              accept="image/*,application/pdf"
-              className="hidden"
-            />
-            
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9F55FF] to-[#5588FF] rounded-full opacity-30 group-hover:opacity-60 transition duration-500 blur"></div>
-              <div className="relative bg-white rounded-full flex items-center p-2 pr-2 shadow-xl">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#00E599] to-[#00CC88] rounded-full opacity-20 group-hover:opacity-40 transition duration-500 blur"></div>
+              <div className="relative bg-[#252A36] rounded-full flex items-center p-2 pr-2 shadow-2xl border border-white/5">
                 <input
                   ref={inputRef}
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSend();
-                    }
+                    if (e.key === "Enter") handleSend();
                   }}
-                  placeholder={
-                    isRecording
-                      ? "Listening..."
-                      : "Ask a follow-up question..."
-                  }
-                  className="flex-1 bg-transparent text-gray-800 placeholder-gray-500 text-lg outline-none font-['Roboto'] font-normal"
+                  placeholder={isRecording ? "Listening..." : "Ask A Follow-Up Question..."}
+                  className="flex-1 bg-transparent text-white placeholder-gray-500 text-lg outline-none px-4 font-['Roboto']"
                   disabled={isLoading || isRecording}
                 />
 
                 <div className="flex items-center gap-2">
-                  {/* Upload Button */}
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className={`p-3 rounded-full transition-all duration-300 flex items-center justify-center ${
-                      suggestUpload 
-                        ? "bg-[#00E599] text-black animate-bounce shadow-lg" 
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
-                    title="Upload Invoice"
+                    className="p-3 rounded-full text-gray-400 hover:text-white transition-colors"
                   >
                     <Paperclip size={20} />
                   </button>
-                  
-                  {/* Voice Button */}
                   <button
                     onClick={toggleRecording}
-                    className={`p-3 rounded-full transition-all duration-300 flex items-center justify-center ${
-                      isRecording
-                        ? "bg-red-500 text-white animate-pulse shadow-red-500/50 shadow-lg"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
-                    title="Voice Input"
+                    className={`p-3 rounded-full transition-all ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-white'}`}
                   >
-                    {isRecording ? (
-                      <Square size={20} fill="currentColor" />
-                    ) : (
-                      <Mic size={20} />
-                    )}
+                    <Mic size={20} />
                   </button>
-
-                  {/* Send Button */}
                   <button
                     onClick={() => handleSend()}
                     disabled={isLoading || (!inputValue && !isRecording)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
-                      inputValue
-                        ? "bg-[#00D95F] text-black hover:bg-[#00c055]"
-                        : "bg-[#00D95F] text-black hover:bg-[#00c055]"
-                    }`}
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-[#00E599] text-black hover:bg-[#00CC88] transition-all"
                   >
-                    {isLoading ? (
-                      <Loader2 size={24} className="animate-spin" />
-                    ) : (
-                      <ArrowUp size={24} strokeWidth={2.5} />
-                    )}
+                    {isLoading ? <Loader2 size={24} className="animate-spin" /> : <ArrowUp size={24} strokeWidth={2.5} />}
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -793,14 +767,17 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
               type="text"
               value={inputValue}
               onChange={(e) => {
-                setInputValue(e.target.value);
                 if (e.target.value.trim()) {
                   setShowQuickQuestions(false);
+                  setIsFullScreen(true);
+                  setHasInteracted(true);
                 } else {
                   setShowQuickQuestions(true);
                 }
               }}
               onFocus={() => {
+                setIsFullScreen(true);
+                setHasInteracted(true);
                 if (!inputValue.trim() && !response) {
                   setShowQuickQuestions(true);
                 }
