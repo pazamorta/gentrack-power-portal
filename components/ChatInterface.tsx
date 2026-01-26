@@ -767,17 +767,14 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
               type="text"
               value={inputValue}
               onChange={(e) => {
+                setInputValue(e.target.value);
                 if (e.target.value.trim()) {
                   setShowQuickQuestions(false);
-                  setIsFullScreen(true);
-                  setHasInteracted(true);
                 } else {
                   setShowQuickQuestions(true);
                 }
               }}
               onFocus={() => {
-                setIsFullScreen(true);
-                setHasInteracted(true);
                 if (!inputValue.trim() && !response) {
                   setShowQuickQuestions(true);
                 }
