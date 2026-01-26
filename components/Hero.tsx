@@ -4,7 +4,7 @@ import { ChatInterface } from './ChatInterface';
 export const Hero: React.FC = () => {
 
   return (
-    <section className="relative z-30 min-h-screen flex flex-col items-center justify-center px-4 pb-20 overflow-hidden">
+    <section className="relative z-30 min-h-screen flex flex-col items-center justify-start pt-48 px-4 pb-20 overflow-hidden">
       {/* Background Layers */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[#06040A]" /> {/* Base color */}
@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0B0D15]/30 to-[#0B0D15]/60 pointer-events-none" />
       </div>
 
-      <div className="max-w-5xl w-full text-center z-10 space-y-8 flex flex-col items-center mt-8 -translate-y-[150px]">
+      <div className="max-w-5xl w-full text-center z-10 space-y-8 flex flex-col items-center mt-8">
         
         {/* Heading */}
         <h1 
