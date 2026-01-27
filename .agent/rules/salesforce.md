@@ -9,7 +9,50 @@ trigger: always_on
 - **Target Org:** Always point all Salesforce CLI commands and tool interactions to the specific org alias: **GTCX**.
 - **Verification:** Before running any destructive or deployment commands, verify the connection context is set to **GTCX** org id 00DDx000000LN4nMAG with username juan.trujillopez@gmail.com.gtk.emea.demo.gtcx
 
-## 2. Metadata Operations
+## 2. Naming Conventions & Standards (Mandatory)
+
+### 2.1 Apex Development
+
+All Apex classes must follow the **GTCX\_[ClassName]** pattern using UpperCamelCase (PascalCase) after the prefix.
+
+- **Pattern:** `GTCX_` + `[ClassName]` (UpperCamelCase)
+- **Example:** `GTCX_OrderValidator`
+
+**Test Classes:**
+Must follow the `[ClassName]Test` pattern.
+
+- **Example:** `GTCX_OrderValidatorTest`
+
+### 2.2 Lightning Web Components (LWC)
+
+To ensure proper mapping to HTML tags (kebab-case), LWCs must follow the **gtcx\_[LWCName]** pattern, using a lowercase prefix and lowerCamelCase for the component name.
+
+- **Pattern:** `gtcx_` + `[LWCName]` (lowerCamelCase)
+- **Example:** `gtcx_invoiceGenerator`
+- **Markup Usage:** Resulting in `<c-gtcx-invoice-generator>`
+
+**LWC Controllers:**
+Must follow the `[LWCName]Controller` pattern.
+
+- **Example:** `gtcx_invoiceGeneratorController`
+
+### 2.3 Custom Labels
+
+Custom Labels must be structured by module to ensure they are easy to find and manage as the project grows.
+
+- **Pattern:** `GTCX_[ModuleName]_[LabelName]`
+- **Format:** Use Snake_Case for the name to separate the module and the specific description clearly.
+- **Example:** `GTCX_Billing_InvalidAddressError`
+
+**Categories:**
+The "Category" field should always be populated with the module name (e.g., Billing, JuniferIntegration, UI) for better filtering.
+
+### 2.4 Metadata & Schema
+
+- **Custom Objects:** `GTCX_[Object_Name]__c` (e.g., `GTCX_Subscription__c`)
+- **Custom Fields:** `GTCX_[Field_Name]__c` (e.g., `GTCX_Total_Amount__c`)
+
+## 3. Metadata Operations
 
 To ensure consistency and compatibility with the Antigravity workflow, use the designated Salesforce MCP tools for all environment synchronization:
 
@@ -17,7 +60,7 @@ To ensure consistency and compatibility with the Antigravity workflow, use the d
 - **Deployment:** Use `deploy_metadata` to push local changes to the GTCX org.
 - **Note:** Avoid raw `sf project deploy start` commands unless explicitly directed; favor the MCP abstractions.
 
-## 3. Security and Permission Sets
+## 4. Security and Permission Sets
 
 Security is a day-zero requirement.
 
@@ -27,7 +70,7 @@ Security is a day-zero requirement.
   - Ensure **Object Level Security (OLS)** is defined (Read/Create/Edit as required).
   - Ensure **Field Level Security (FLS)** is defined (Edit/Read access) for all newly created fields.
 
-## 4. Lightning Web Component (LWC) Development
+## 5. Lightning Web Component (LWC) Development
 
 When developing LWCs, you must consult and follow the guidelines provided by the Salesforce MCP tools. Do not rely on generic documentation; use these specific guides to ensure "Antigravity" compliance:
 
@@ -142,6 +185,7 @@ Lightning Pages aren’t unit-tested like code, so you must add a **page smoke c
 ## 9. Summary Checklist for Tasks
 
 - Am I connected to **GTCX**?
+- Have I adhered to the **GTCX\_** naming conventions for all new metadata?
 - Have I used `retrieve_metadata` or `deploy_metadata`?
 - If I added a field/object, is it in the **Gentrack_B2B_Access** permission set?
 - Have I validated my **LWC** against the 6 MCP Guide Tools?

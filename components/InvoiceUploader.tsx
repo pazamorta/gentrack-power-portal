@@ -8,9 +8,10 @@ interface InvoiceUploaderProps {
     gdprConsent: boolean;
     onGdprChange?: (checked: boolean) => void;
     onGdprError?: () => void;
+    theme?: 'light' | 'dark';
 }
 
-export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, gdprConsent, onGdprChange, onGdprError }) => {
+export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, gdprConsent, onGdprChange, onGdprError, theme = 'dark' }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -151,7 +152,9 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                         ? 'border-[#00E599] bg-[#00E599]/5'
                         : success
                             ? 'border-[#00E599]/50 bg-[#00E599]/5'
-                            : 'border-white/10 hover:border-white/20 bg-white/5'
+                            : theme === 'light' 
+                                ? 'border-gray-200 bg-gray-50 hover:border-[#3ACDFA]' 
+                                : 'border-white/10 hover:border-white/20 bg-white/5'
                     }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -168,7 +171,7 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                 <div className="flex flex-col items-center justify-center text-center">
                     {/* GDPR Notice inside Uploader */}
                     {!gdprConsent && !success && (
-                        <div className="mb-6 p-3 bg-white/5 rounded-lg border border-white/10 max-w-md">
+                        <div className={`mb-6 p-3 rounded-lg border max-w-md ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-white/5 border-white/10'}`}>
                             <label className="flex items-start gap-3 cursor-pointer group text-left">
                                 <div className="relative flex items-center mt-1">
                                     <input 
@@ -177,11 +180,11 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                                         onChange={(e) => onGdprChange?.(e.target.checked)}
                                         className="peer sr-only"
                                     />
-                                    <div className="w-4 h-4 border-2 border-white/30 rounded bg-transparent peer-checked:bg-[#00E599] peer-checked:border-[#00E599] transition-all"></div>
+                                    <div className={`w-4 h-4 border-2 rounded bg-transparent peer-checked:bg-[#00E599] peer-checked:border-[#00E599] transition-all ${theme === 'light' ? 'border-gray-300' : 'border-white/30'}`}></div>
                                     <Check size={10} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-black opacity-0 peer-checked:opacity-100 transition-opacity" />
                                 </div>
-                                <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
-                                    I agree to the <a href="#" className="underline text-white hover:text-[#00E599]" onClick={(e) => e.stopPropagation()}>Privacy Policy</a> and consent to the processing of my personal data.
+                                <span className={`text-xs transition-colors ${theme === 'light' ? 'text-gray-500 group-hover:text-gray-700' : 'text-gray-400 group-hover:text-gray-300'}`}>
+                                    I agree to the <a href="#" className={`underline hover:text-[#00E599] ${theme === 'light' ? 'text-gray-900' : 'text-white'}`} onClick={(e) => e.stopPropagation()}>Privacy Policy</a> and consent to the processing of my personal data.
                                 </span>
                             </label>
                         </div>
@@ -190,15 +193,15 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                     {isProcessing ? (
                         <>
                             <Loader2 className="w-10 h-10 text-[#00E599] animate-spin mb-4" />
-                            <p className="text-white font-medium">Analyzing Invoice...</p>
-                            <p className="text-sm text-gray-400 mt-2">Extracting account and meter details</p>
+                            <p className={`font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Analyzing Invoice...</p>
+                            <p className={`text-sm mt-2 ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>Extracting account and meter details</p>
                         </>
                     ) : success ? (
                         <>
                             <CheckCircle className="w-10 h-10 text-[#00E599] mb-4" />
+                            <p className={`font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Invoice Processed Successfully</p>
                             <p className="text-white font-medium">Invoice Processed Successfully</p>
-                            <p className="text-white font-medium">Invoice Processed Successfully</p>
-                            <p className="text-sm text-gray-400 mt-2">We've pre-filled the form with the extracted details.</p>
+                            <p className={`text-sm mt-2 ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>We've pre-filled the form with the extracted details.</p>
                             
                              {/* Savings Display */}
                              {(lastParsedData?.yearlySavings && lastParsedData.yearlySavings > 0) && (
@@ -209,7 +212,7 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                                     <div className="flex justify-between items-end">
                                         <div>
                                             <p className="text-sm text-gray-400">Current Rate</p>
-                                            <p className="text-white font-medium">£{lastParsedData.currentRate?.toFixed(2)}/MWh</p>
+                                            <p className={`font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>£{lastParsedData.currentRate?.toFixed(2)}/MWh</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm text-gray-400">Est. Yearly Savings</p>
@@ -232,19 +235,19 @@ export const InvoiceUploader: React.FC<InvoiceUploaderProps> = ({ onDataParsed, 
                         </>
                     ) : (
                         <>
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                <Upload className="w-8 h-8 text-gray-400" />
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${theme === 'light' ? 'bg-gray-100' : 'bg-white/5'}`}>
+                                <Upload className={`w-8 h-8 ${theme === 'light' ? 'text-[#3ACDFA]' : 'text-gray-400'}`} />
                             </div>
-                            <h3 className="text-lg font-medium text-white mb-2">
+                            <h3 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
                                 Upload your latest invoice
                             </h3>
-                            <p className="text-gray-400 text-sm max-w-sm mb-6">
+                            <p className={`text-sm max-w-sm mb-6 ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>
                                 Drag and drop or click to upload. We'll extract your company details, sites, and meter points automatically.
                             </p>
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="px-6 py-2.5 bg-white text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
+                                className={`px-6 py-2.5 rounded-full font-medium transition-colors ${theme === 'light' ? 'bg-gray-900 text-white hover:bg-black' : 'bg-white text-black hover:bg-gray-100'}`}
                             >
                                 Select File
                             </button>

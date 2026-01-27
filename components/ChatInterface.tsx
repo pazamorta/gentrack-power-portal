@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Link } from 'react-router-dom';
-import { ArrowUp, Mic, Square, Loader2, Volume2, Paperclip, FileText, X, Minimize2 } from "lucide-react";
+import { ArrowUp, Mic, Square, Loader2, Volume2, Paperclip, FileText, X, Minimize2, Bot, MessageCircle } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { salesforceService, ParsedInvoiceData } from '../services/salesforce';
 import { aiService } from '../services/ai';
@@ -48,7 +48,11 @@ function decodeAudioData(
 
 // --- Component ---
 
-export const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  variant?: 'default' | 'fab';
+}
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ variant = 'default' }) => {
   // Chat mode state
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -724,6 +728,30 @@ Return only the 4 questions, one per line, without numbering or bullets. Keep ea
   }
 
   // Compact mode (initial view)
+  if (variant === 'fab') {
+    return (
+       <div className="fixed bottom-8 right-8 z-[100] animate-fade-in-up">
+           <button
+           onClick={() => setIsFullScreen(true)}
+           className="w-16 h-16 bg-[#00E081] hover:bg-[#00c974] rounded-full shadow-2xl flex items-center justify-center text-white transition-all duration-300 hover:scale-110 group relative"
+           >
+            {/* Ping animation wrapper */}
+             <span className="absolute inline-flex h-full w-full rounded-full bg-[#00E081] opacity-75 animate-ping group-hover:hidden"></span>
+             
+             <div className="relative z-10">
+                <Bot size={32} />
+             </div>
+             
+             {/* Tooltip/Badge */}
+             <div className="absolute -top-12 right-0 w-max bg-white text-gray-900 px-4 py-2 rounded-xl shadow-lg font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none transform translate-y-2 group-hover:translate-y-0">
+                Ask Oxygen AI
+                <div className="absolute bottom-[-6px] right-6 w-3 h-3 bg-white transform rotate-45"></div>
+             </div>
+           </button>
+       </div>
+    );
+  }
+
   return (
     <div className="w-full mx-auto animate-fade-in-up delay-200 font-sans" ref={containerRef}>
       <div className="flex flex-col gap-6 p-4 rounded-3xl max-w-2xl mx-auto">

@@ -3,6 +3,8 @@ import { Navbar } from '../components/Navbar';
 // import { Footer } from '../components/Footer';
 import { ScrollToTop } from '../components/ScrollToTop';
 
+import { Link } from 'react-router-dom';
+
 const assets = {
   heroLandscape: '/gentrack-power-portal/assets/oxygen/hero_landscape.png',
   heroBg: '/gentrack-power-portal/assets/oxygen/storage/hero_bg.png',
@@ -12,9 +14,10 @@ const assets = {
   customerStoryImg: '/gentrack-power-portal/assets/oxygen/storage/customer_story_bg.png',
   // fullWidthDisplay: '/gentrack-power-portal/assets/oxygen/storage/full_width_storage.png', // Replaced
   wideSectionBg: '/gentrack-power-portal/assets/oxygen/storage/wide_section_bg.png', // New background
-  circularFeature: '/gentrack-power-portal/assets/oxygen/storage/circular_feature.png', // New circular image
+  circularFeature: '/gentrack-power-portal/assets/oxygen/storage/circular_feature.png', // Reverted to original
+  controlRoom: '/gentrack-power-portal/assets/oxygen/storage/control_room.jpg', // Specific asset for control room
   storageFeature: '/gentrack-power-portal/assets/oxygen/storage/storage_feature.png',
-  grid1: '/gentrack-power-portal/assets/oxygen/grid_img_1.png',
+  grid1: '/gentrack-power-portal/assets/oxygen/storage/office_environment.jpg', // New office image
   maskGraphic: '/gentrack-power-portal/assets/oxygen/mask_graphic.svg',
   maskGraphicLayer2: '/gentrack-power-portal/assets/oxygen/mask_graphic_layer2.svg',
   customerStoryReplacement: '/gentrack-power-portal/assets/oxygen/storage/customer_story_replacement.svg',
@@ -182,7 +185,7 @@ export const StoragePage: React.FC = () => {
             {/* Right Image (Circular) - Updated */}
             <div className="relative flex justify-center">
                <div className="relative w-full max-w-[500px] aspect-square rounded-full overflow-hidden shadow-2xl">
-                   <img src={assets.circularFeature} className="w-full h-full object-cover" alt="Control Room" />
+                   <img src={assets.controlRoom} className="w-full h-full object-cover" alt="Control Room" />
                </div>
             </div>
          </div>
@@ -258,7 +261,8 @@ export const StoragePage: React.FC = () => {
             Are you ready to grow your<br/>business with us?
           </h2>
           <p className="text-gray-600 text-lg mb-8 font-roboto font-medium opacity-80">Talk to our AI and take your business to the next level today.</p>
-          <button 
+          <Link 
+            to="/platform#get-started"
             className="inline-flex items-center justify-center px-10 py-4 rounded-full text-white font-bold transition-all hover:opacity-90 hover:scale-105 shadow-lg"
             style={{
               background: '#3ACDFA',
@@ -266,7 +270,7 @@ export const StoragePage: React.FC = () => {
             }}
           >
             Get a quote now
-          </button>
+          </Link>
         </div>
       </section>
 

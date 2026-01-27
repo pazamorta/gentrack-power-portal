@@ -6,7 +6,12 @@ import { salesforceService, ParsedInvoiceData } from '../services/salesforce';
 
 type Step = 1 | 2 | 3;
 
-export const B2BForm: React.FC = () => {
+interface B2BFormProps {
+  theme?: 'light' | 'dark';
+  variant?: 'default' | 'embedded';
+}
+
+export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'default' }) => {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [formData, setFormData] = useState({
     userType: 'company',
@@ -313,17 +318,19 @@ export const B2BForm: React.FC = () => {
     { number: 3, title: 'Requirements', description: 'What you need' },
   ];
 
-  return (
-    <section id="get-started" className="py-24 px-4 bg-background/50 backdrop-blur-sm border-t border-white/5" style={{ scrollMarginTop: '100px' }}>
+  const content = (
+    <>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl md:text-5xl font-display font-medium mb-4">
-            Get Started with Oxygen
-          </h2>
-          <p className="text-secondary text-lg">
-            Tell us about your business and we'll help you find the right solution.
-          </p>
-        </div>
+        {variant !== 'embedded' && (
+          <div className="mb-16 text-center">
+            <h2 className={`text-3xl md:text-5xl font-display font-medium mb-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              Get Started with Oxygen
+            </h2>
+            <p className={`text-lg ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
+              Tell us about your business and we'll help you find the right solution.
+            </p>
+          </div>
+        )}
 
         {/* Progress Indicator */}
         <div className="mb-12">
@@ -336,8 +343,8 @@ export const B2BForm: React.FC = () => {
                       className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${currentStep > step.number
                         ? 'bg-[#00E599] text-black'
                         : currentStep === step.number
-                          ? 'bg-white text-black scale-110'
-                          : 'bg-white/10 text-gray-400 border-2 border-white/20'
+                          ? theme === 'light' ? 'bg-[#3ACDFA] text-white scale-110' : 'bg-white text-black scale-110'
+                          : theme === 'light' ? 'bg-gray-200 text-gray-500 border-2 border-gray-300' : 'bg-white/10 text-gray-400 border-2 border-white/20'
                         }`}
                     >
                       {currentStep > step.number ? (
@@ -347,17 +354,17 @@ export const B2BForm: React.FC = () => {
                       )}
                     </div>
                     <div className="mt-2 text-center">
-                      <div className={`text-xs font-medium ${currentStep >= step.number ? 'text-white' : 'text-gray-500'}`}>
+                      <div className={`text-xs font-medium ${currentStep >= step.number ? (theme === 'light' ? 'text-gray-900' : 'text-white') : 'text-gray-500'}`}>
                         {step.title}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 hidden md:block">
+                      <div className={`text-xs mt-1 hidden md:block ${theme === 'light' ? 'text-gray-600' : 'text-gray-500'}`}>
                         {step.description}
                       </div>
                     </div>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 transition-all duration-500 ${currentStep > step.number ? 'bg-[#00E599]' : 'bg-white/10'
+                      className={`h-1 flex-1 mx-2 transition-all duration-500 ${currentStep > step.number ? 'bg-[#00E599]' : (theme === 'light' ? 'bg-gray-200' : 'bg-white/10')
                         }`}
                       style={{ marginTop: '-24px' }}
                     />
@@ -368,22 +375,22 @@ export const B2BForm: React.FC = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-surface/30 border border-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-md">
+        <form onSubmit={handleSubmit} className={`rounded-3xl p-8 md:p-12 backdrop-blur-md ${theme === 'light' ? 'bg-white border border-gray-200 shadow-lg' : 'bg-surface/30 border border-white/5'}`}>
           {/* Step 1: Company and Contact Information */}
           {currentStep === 1 && (
             <div className="animate-fade-in">
-              <h3 className="text-2xl font-bold mb-2 text-white">Company and Contact Information</h3>
-              <p className="text-secondary mb-8">Let's start with the basics. Upload your invoice to auto-fill details.</p>
+              <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Company and Contact Information</h3>
+              <p className={`mb-8 ${theme === 'light' ? 'text-gray-700' : 'text-secondary'}`}>Let's start with the basics. Upload your invoice to auto-fill details.</p>
 
               {/* User Type Switch */}
               <div className="flex justify-center mb-8">
-                <div className="bg-white/5 p-1 rounded-full inline-flex border border-white/10">
+                <div className={`p-1 rounded-full inline-flex border ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-white/5 border-white/10'}`}>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, userType: 'company' }))}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${formData.userType === 'company'
-                        ? 'bg-[#00E599] text-black shadow-lg'
-                        : 'text-gray-400 hover:text-white'
+                        ? theme === 'light' ? 'bg-[#00E599] text-white shadow-lg' : 'bg-[#00E599] text-black shadow-lg'
+                        : theme === 'light' ? 'text-gray-700 hover:text-gray-900' : 'text-gray-400 hover:text-white'
                       }`}
                   >
                     For Your Company
@@ -392,8 +399,8 @@ export const B2BForm: React.FC = () => {
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, userType: 'tpi' }))}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${formData.userType === 'tpi'
-                        ? 'bg-[#00E599] text-black shadow-lg'
-                        : 'text-gray-400 hover:text-white'
+                        ? theme === 'light' ? 'bg-[#00E599] text-white shadow-lg' : 'bg-[#00E599] text-black shadow-lg'
+                        : theme === 'light' ? 'text-gray-700 hover:text-gray-900' : 'text-gray-400 hover:text-white'
                       }`}
                   >
                     As A TPI
@@ -411,12 +418,13 @@ export const B2BForm: React.FC = () => {
                             // Optional: Could add a toast or error state here if needed
                             // But for now the UI disabling/message in InvoiceUploader will handle it
                         }}
+                        theme={theme}
                     />
                     <div className="text-center">
                         <button 
                             type="button" 
                             onClick={() => setShowManualForm(true)}
-                            className="text-sm text-gray-400 hover:text-white underline transition-colors"
+                            className={`text-sm underline transition-colors ${theme === 'light' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
                         >
                             Or enter details manually
                         </button>
@@ -431,7 +439,7 @@ export const B2BForm: React.FC = () => {
                 <div>
                   {formData.userType === 'tpi' && (
                     <div className="mb-6">
-                      <label htmlFor="tpiIdentifier" className="block text-sm font-medium text-gray-300 mb-2">
+                      <label htmlFor="tpiIdentifier" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                         TPI Identifier *
                       </label>
                       <input
@@ -441,13 +449,13 @@ export const B2BForm: React.FC = () => {
                         required
                         value={formData.tpiIdentifier}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                        className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border-2 border-gray-400 text-gray-900 placeholder-gray-500 focus:border-[#3ACDFA] focus:ring-2 focus:ring-[#3ACDFA]/20 font-medium' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                         placeholder="Enter your TPI Identifier"
                       />
                     </div>
                   )}
 
-                  <label htmlFor="companyName" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="companyName" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     {formData.userType === 'tpi' ? 'Client Account Name *' : 'Company Name *'}
                   </label>
                   <input
@@ -457,13 +465,13 @@ export const B2BForm: React.FC = () => {
                     required
                     value={formData.companyName}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                    className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                     placeholder={formData.userType === 'tpi' ? "Enter client account name" : "Enter company name"}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="companyNumber" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="companyNumber" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Company Number *
                   </label>
                   <input
@@ -473,13 +481,13 @@ export const B2BForm: React.FC = () => {
                     required
                     value={formData.companyNumber} // errors here are expected until the state update is processed by the language server, but it's fine since we updated state in the first chunk
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                    className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                     placeholder="Enter company number"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="website" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="website" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Company Website
                   </label>
                   <input
@@ -488,14 +496,14 @@ export const B2BForm: React.FC = () => {
                     name="website"
                     value={formData.website}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                    className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                     placeholder="https://example.com"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="contactName" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="contactName" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Full Name *
                     </label>
                     <input
@@ -505,12 +513,12 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.contactName}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                       placeholder="Your full name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="jobTitle" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Job Title *
                     </label>
                     <input
@@ -520,7 +528,7 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.jobTitle}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                       placeholder="e.g., Operations Manager"
                     />
                   </div>
@@ -528,7 +536,7 @@ export const B2BForm: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="email" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Email Address *
                     </label>
                     <input
@@ -538,12 +546,12 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                       placeholder="your.email@company.com"
                     />
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="phone" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Phone Number *
                     </label>
                     <input
@@ -553,21 +561,21 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className={`mt-4 p-4 rounded-xl border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
                     <label className="flex items-start gap-3 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={formData.gdprConsent}
                             onChange={(e) => setFormData(prev => ({ ...prev, gdprConsent: e.target.checked }))}
-                            className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-[#00E599] focus:ring-2 focus:ring-[#00E599]/50 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                            className={`mt-1 w-5 h-5 rounded  text-[#00E599] focus:ring-2 focus:ring-[#00E599]/50 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer ${theme === 'light' ? 'border-gray-300 bg-white' : 'border-white/20 bg-white/5'}`}
                         />
-                        <span className="text-sm text-gray-300">
+                        <span className={`text-sm ${theme === 'light' ? 'text-gray-700' : 'text-gray-300'}`}>
                             I consent to the processing of my personal data in accordance with the Privacy Policy and GDPR regulations. *
                         </span>
                     </label>
@@ -582,13 +590,13 @@ export const B2BForm: React.FC = () => {
           {/* Step 2: Business Details */}
           {currentStep === 2 && (
             <div className="animate-fade-in">
-              <h3 className="text-2xl font-bold mb-2 text-white">Business Details</h3>
-              <p className="text-secondary mb-8">Tell us about your business</p>
+              <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Business Details</h3>
+              <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>Tell us about your business</p>
 
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="industry" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="industry" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Industry Type *
                     </label>
                     <select
@@ -597,7 +605,7 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.industry}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 focus:border-white/30'}`}
                     >
                       <option value="">Select industry</option>
                       <option value="Information Technology">Information Technology</option>
@@ -613,7 +621,7 @@ export const B2BForm: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="companySize" className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="companySize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                       Company Size *
                     </label>
                     <select
@@ -622,7 +630,7 @@ export const B2BForm: React.FC = () => {
                       required
                       value={formData.companySize}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 transition-colors"
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
                     >
                       <option value="">Select size</option>
                       <option value="1-50">1-50 employees</option>
@@ -637,7 +645,7 @@ export const B2BForm: React.FC = () => {
 
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                  <label className={`block text-sm font-medium mb-3 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Energy Domains (select all that apply)
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -646,7 +654,9 @@ export const B2BForm: React.FC = () => {
                         key={domain}
                         className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border transition-all ${formData.energyDomains.includes(domain.toLowerCase())
                           ? 'bg-[#00E599]/10 border-[#00E599]/50'
-                          : 'bg-white/5 border-white/10 hover:border-white/20'
+                          : theme === 'light' 
+                            ? 'bg-white border-gray-300 hover:border-gray-400'
+                            : 'bg-white/5 border-white/10 hover:border-white/20'
                           }`}
                       >
                         <input
@@ -654,9 +664,9 @@ export const B2BForm: React.FC = () => {
                           value={domain.toLowerCase()}
                           checked={formData.energyDomains.includes(domain.toLowerCase())}
                           onChange={handleCheckboxChange}
-                          className="w-5 h-5 rounded border-white/20 bg-white/5 text-[#00E599] focus:ring-2 focus:ring-[#00E599]/50 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer"
+                          className={`w-5 h-5 rounded border-white/20 bg-white/5 text-[#00E599] focus:ring-2 focus:ring-[#00E599]/50 focus:ring-offset-2 focus:ring-offset-transparent cursor-pointer ${theme === 'light' ? 'border-gray-300 bg-white' : 'border-white/20 bg-white/5'}`}
                         />
-                        <span className="text-gray-300 font-medium">{domain}</span>
+                        <span className={`font-medium ${theme === 'light' ? 'text-gray-900' : 'text-gray-300'}`}>{domain}</span>
                       </label>
                     ))}
                   </div>
@@ -668,12 +678,12 @@ export const B2BForm: React.FC = () => {
           {/* Step 3: Requirements */}
           {currentStep === 3 && (
             <div className="animate-fade-in">
-              <h3 className="text-2xl font-bold mb-2 text-white">Requirements</h3>
-              <p className="text-secondary mb-8">What are you looking for?</p>
+              <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Requirements</h3>
+              <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>What are you looking for?</p>
 
               <div className="space-y-6">
                 <div>
-                  <label htmlFor="useCase" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="useCase" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Primary Use Case *
                   </label>
                   <select
@@ -682,7 +692,7 @@ export const B2BForm: React.FC = () => {
                     required
                     value={formData.useCase}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 transition-colors"
+                    className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
                   >
                     <option value="">Select use case</option>
                     <option value="billing">Billing & Collections</option>
@@ -698,7 +708,7 @@ export const B2BForm: React.FC = () => {
 
 
                 <div>
-                  <label htmlFor="additionalInfo" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="additionalInfo" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Additional Information
                   </label>
                   <textarea
@@ -707,13 +717,13 @@ export const B2BForm: React.FC = () => {
                     rows={4}
                     value={formData.additionalInfo}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/30 transition-colors resize-none"
+                    className={`w-full px-4 py-3 rounded-xl placeholder-gray-500 focus:outline-none transition-colors resize-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
                     placeholder="Tell us more about your specific needs, challenges, or questions..."
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="portfolioSize" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="portfolioSize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
                     Portfolio Size *
                   </label>
                   <select
@@ -722,7 +732,7 @@ export const B2BForm: React.FC = () => {
                     required
                     value={formData.portfolioSize}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-white/30 transition-colors"
+                    className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
                   >
                     <option value="">Select portfolio size</option>
                     <option value="1-10000">1 - 10,000 Service Points</option>
@@ -732,9 +742,9 @@ export const B2BForm: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                  <h4 className="text-lg font-medium text-white mb-2">Upload Portfolio</h4>
-                  <p className="text-secondary text-sm mb-4">
+                <div className={`rounded-xl p-6 border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                  <h4 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Upload Portfolio</h4>
+                  <p className={`text-sm mb-4 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
                     Download our template to provide your site details, then upload it here to automatically create your portfolio.
                   </p>
                   
@@ -742,7 +752,7 @@ export const B2BForm: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleDownloadTemplate}
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors"
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-white/10 hover:bg-white/20 text-white'}`}
                     >
                       Download Spreadsheet
                     </button>
@@ -783,7 +793,7 @@ export const B2BForm: React.FC = () => {
               disabled={currentStep === 1}
               className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all ${currentStep === 1
                 ? 'text-gray-500 cursor-not-allowed'
-                : 'text-white border border-white/20 hover:border-white/40 hover:bg-white/5'
+                : theme === 'light' ? 'text-gray-600 hover:text-gray-900 border-2 border-transparent' : 'text-white border border-white/20 hover:border-white/40 hover:bg-white/5'
                 }`}
             >
               <ChevronLeft size={20} />
@@ -829,6 +839,16 @@ export const B2BForm: React.FC = () => {
           )}
         </form>
       </div>
+    </>
+  );
+
+  if (variant === 'embedded') {
+    return content;
+  }
+
+  return (
+    <section id="get-started" className={`py-24 px-4 backdrop-blur-sm border-t ${theme === 'light' ? 'bg-white border-gray-100' : 'bg-background/50 border-white/5'}`} style={{ scrollMarginTop: '100px' }}>
+      {content}
     </section>
   );
 };

@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 
 import { Footer } from './components/Footer';
+import { ChatInterface } from './components/ChatInterface';
 import { EnergyDomainsPage } from './pages/EnergyDomainsPage';
 import { StoragePage } from './pages/StoragePage';
 import { SolutionsPage } from './pages/SolutionsPage';
@@ -51,6 +52,11 @@ const AppContent: React.FC = () => {
             </Routes>
           </main>
           {!isHomePage && location.pathname !== '/solutions' && location.pathname !== '/storage' && location.pathname !== '/about' && <Footer />}
+          
+          {/* AI Assistant Bot (FAB) - Only shown on specific pages */}
+          {['/solutions', '/storage', '/platform', '/about'].includes(location.pathname) && (
+            <ChatInterface variant="fab" />
+          )}
         </div>
         <ScrollToHashElement />
       </div>

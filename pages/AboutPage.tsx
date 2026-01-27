@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ChatInterface } from '../components/ChatInterface';
 
 const assets = {
   heroBg: '/gentrack-power-portal/assets/about/hero-bg.png',
@@ -69,40 +70,8 @@ export const AboutPage: React.FC = () => {
             Powering Business<br />with Smart Energy
           </h1>
           
-          <p 
-            className="text-white/90 mb-8 font-bold"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: '24px',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}
-          >
-            How can I help you today?
-          </p>
-
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto relative group">
-            <div className="absolute inset-0 bg-white/20 rounded-full blur-xl transition-all duration-300 group-hover:bg-white/30"></div>
-            <div className="relative bg-white rounded-full p-2 pl-6 flex items-center shadow-2xl">
-              <input 
-                type="text" 
-                placeholder="Ask Anything About Your Energy Operations..." 
-                className="flex-grow bg-transparent border-none outline-none text-gray-800 placeholder-gray-500 font-medium text-lg font-roboto"
-              />
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                  </svg>
-                </button>
-                <button className="bg-[#00D06C] hover:bg-[#00b05b] text-white p-3 rounded-full transition-colors flex items-center justify-center">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14"/>
-                    <path d="m12 5 7 7-7 7"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <div className="w-full max-w-2xl mx-auto">
+             <ChatInterface />
           </div>
         </div>
 
@@ -173,17 +142,7 @@ export const AboutPage: React.FC = () => {
                 />
                 
                 {/* Green Pill Overlay */}
-                <div className="absolute top-8 right-8 bg-[#00D06C] rounded-full px-6 py-3 flex items-center gap-3 shadow-lg">
-                  <div className="bg-white/20 p-1.5 rounded-full">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
-                      <path d="M8.5 8.5v.01"/>
-                      <path d="M16 15.5v.01"/>
-                      <path d="M12 12v.01"/>
-                    </svg>
-                  </div>
-                  <span className="text-white font-bold font-roboto">AI Assistant</span>
-                </div>
+
               </div>
             </div>
           </div>
@@ -505,7 +464,7 @@ export const AboutPage: React.FC = () => {
           </h2>
           <p className="text-gray-600 text-lg mb-8 font-roboto font-medium opacity-80">Talk to our AI and take your business to the next level today.</p>
           <Link 
-            to="/get-started"
+            to="/platform#get-started"
             className="inline-flex items-center justify-center px-10 py-4 rounded-full text-white font-bold transition-all hover:opacity-90 hover:scale-105 shadow-lg"
             style={{
               background: '#3ACDFA',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, Plus, Minus } from 'lucide-react';
 
 const assets = {
@@ -153,18 +154,16 @@ export const SolutionsPage: React.FC = () => {
               <p className="text-gray-600 text-lg leading-relaxed mb-8">
                 Oxygen delivers end-to-end energy solutions designed to meet the evolving needs of modern businesses. From energy supply and market access to renewable generation, storage and green gas, we help organisations reduce risk, optimise costs and accelerate their transition to a low-carbon future.
               </p>
-              <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+              <Link to="/platform#get-started" className="inline-block px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
                 Get a quote now
-              </button>
+              </Link>
            </div>
            <div className="relative flex justify-center">
               <div className="relative w-[400px] h-[400px]">
                  <div className="w-full h-full rounded-full overflow-hidden shadow-2xl relative z-10">
                     <img src={assets.circleGraphicNew} className="w-full h-full object-cover scale-110" alt="AI Powered Solutions" />
                  </div>
-                 <div className="absolute -right-12 top-1/2 -translate-y-1/2 bg-[#00D084] text-[#0b0d17] px-6 py-3 rounded-full font-bold flex items-center shadow-lg z-20">
-                    AI Assistant
-                 </div>
+
               </div>
            </div>
         </div>
@@ -242,9 +241,9 @@ export const SolutionsPage: React.FC = () => {
                      </p>
                    </div>
 
-                   <button className="px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all mt-8">
+                   <Link to="/platform#get-started" className="inline-block px-8 py-3 bg-[#3ACDFA] text-white rounded-full font-bold shadow-md hover:shadow-lg transition-all mt-8">
                       Get a quote now
-                   </button>
+                   </Link>
                 </div>
             </div>
          </div>
