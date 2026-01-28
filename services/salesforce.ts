@@ -65,6 +65,10 @@ export interface ParsedInvoiceData {
     timeline?: string;
     budget?: string;
     portfolioSize?: string;
+    customerSegment?: string;
+    contractLength?: string;
+    contractStartDate?: string;
+    onsiteGeneration?: boolean;
     
     // Savings analysis
     currentRate?: number; // £/MWh

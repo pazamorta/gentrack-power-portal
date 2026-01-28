@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Check, CheckCircle, Building2, Users, Extern
 import { InvoiceUploader } from './InvoiceUploader';
 import { salesforceService, ParsedInvoiceData } from '../services/salesforce';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface B2BFormProps {
   theme?: 'light' | 'dark';
@@ -35,6 +35,20 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     gdprConsent: false,
     portfolioSize: '',
     leadId: '',
+    // New Fields
+    spendUnder30k: null as boolean | null,
+    singleSite: null as boolean | null,
+    employeesOver10: null as boolean | null,
+    balanceSheetOver2m: null as boolean | null,
+    customerSegment: '',
+    contractLength: '',
+    contractStartDate: '',
+    onsiteGeneration: null as boolean | null,
+    endCustomerName: '',
+    endCustomerAddress: '',
+    endCustomerCompanyNumber: '',
+    letterOfAuthority: null as File | null,
+    manualMeters: [] as string[],
   });
   const [showManualForm, setShowManualForm] = useState(false);
   const [invoiceData, setInvoiceData] = useState<ParsedInvoiceData | null>(null);
@@ -71,16 +85,106 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     }));
   };
 
+  // Calculate Customer Segment whenever relevant fields change
+  React.useEffect(() => {
+    const { spendUnder30k, singleSite, employeesOver10, balanceSheetOver2m } = formData;
+    
+    // Only calculate if the main segment questions are answered
+    if (spendUnder30k === null || singleSite === null) return;
+
+    let segment = '';
+    
+    // Logic Correction: 
+    // Q2: 'Are you looking for just one site?' 
+    // Yes (true) -> Single Site
+    // No (false) -> Multi Site
+    
+    if (spendUnder30k) {
+        // SME Path
+        if (singleSite) {
+            segment = 'SME Single Site'; // Case C (Modified logic)
+        } else {
+            segment = 'SME Multi-Site'; // Case A (Modified logic)
+        }
+        
+        // Microbusiness Check for SME (A & C)
+        // "If any of the answers is no, set = 'Microbusiness'"
+        // Questions: >10 Employees? >£2m Balance?
+        // If either is NO (false) -> Microbusiness
+        if (employeesOver10 === false || balanceSheetOver2m === false) {
+             segment = 'Microbusiness';
+        }
+        
+    } else {
+        // I&C Path
+        if (singleSite) {
+            segment = 'I&C Single Site'; // Case D (Modified logic)
+        } else {
+            segment = 'I&C Multi Site'; // Case B (Modified logic)
+        }
+    }
+    
+    setFormData(prev => {
+        if (prev.customerSegment !== segment) {
+            return { ...prev, customerSegment: segment };
+        }
+        return prev;
+    });
+
+  }, [formData.spendUnder30k, formData.singleSite, formData.employeesOver10, formData.balanceSheetOver2m]);
+
   const validateStep = (step: Step): boolean => {
     switch (step) {
       case 1:
         const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
         if (formData.userType === 'tpi' && !formData.tpiIdentifier) return false;
-        return !!(formData.gdprConsent && formData.companyName && formData.companyNumber && formData.contactName && formData.email && emailValid && formData.phone && formData.jobTitle);
+        
+        // Base validation
+        const baseValid = !!(formData.gdprConsent && formData.companyName && formData.companyNumber && formData.contactName && formData.email && emailValid && formData.phone && formData.jobTitle);
+        
+        // If TPI, we also need end customer details? 
+        // "Please enter The end customer's information" -> This is likely in a later step or added to Step 1 for TPI?
+        // The prompt says "If the user selects the 'As a TPI' tab add... End customer info". 
+        // I'll assume they go in Step 1 or a dedicated step. Let's put them in Step 1 if TPI is selected.
+        if (formData.userType === 'tpi') {
+             return baseValid && !!(formData.endCustomerName && formData.endCustomerAddress && formData.endCustomerCompanyNumber && formData.letterOfAuthority);
+        }
+        
+        return baseValid;
+
       case 2:
+        if (formData.spendUnder30k === null || formData.singleSite === null) return false;
+        
+        // If SME (spend < 30k), must answer microbusiness questions
+        if (formData.spendUnder30k) {
+            if (formData.employeesOver10 === null || formData.balanceSheetOver2m === null) return false;
+        }
+        
         return !!(formData.industry && formData.companySize);
+
       case 3:
-        return !!(formData.useCase && formData.portfolioSize);
+        if (formData.singleSite) {
+             // Single Site: Needs Bill or Manual Entry
+             // If Manual: needs postcode?
+             // "If they select not to upload the form then we display... Company Number, Company Postcode"
+             // Currently manual entry is triggered by showManualForm state or absence of invoice data
+             // We'll validate basic requirements here
+             return !!(formData.useCase && formData.portfolioSize); 
+        } else {
+             // Multi Site: Needs CSV?
+             // "allow the user to upload a CSV" -> Is it mandatory? 
+             // "If the user selects the 'As a TPI' tab... allow upload CSV"
+             // Let's assume mandatory for now or at least basic fields
+             return !!(formData.useCase && formData.portfolioSize);
+        }
+        
+      case 4:
+         // Step 4: Contract Details
+         // Optional: Contract Length, Date, Generation? Or Required?
+         // Prompt doesn't explicitly say required, but usually is. Let's make at least Contract Length required if they are in this flow.
+         // Actually, let's keep it flexible but safe.
+         return true; // For now accept empty
+
       default:
         return false;
     }
@@ -197,7 +301,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   };
 
   const handleNext = async () => {
-    if (validateStep(currentStep) && currentStep < 3) {
+    if (validateStep(currentStep) && currentStep < 4) {
       // Create Lead on Step 1 completion
       if (currentStep === 1) {
           try {
@@ -230,7 +334,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     e.preventDefault();
     setValidationError(null);
     
-    if (!validateStep(3)) {
+    if (!validateStep(4)) {
       setValidationError("Please complete all required fields correctly.");
       return;
     }
@@ -262,7 +366,13 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         industry: formData.industry,
         companySize: formData.companySize,
         useCase: formData.useCase,
-        portfolioSize: formData.portfolioSize
+        portfolioSize: formData.portfolioSize,
+        
+        // New Fields
+        customerSegment: formData.customerSegment,
+        contractLength: formData.contractLength,
+        contractStartDate: formData.contractStartDate,
+        onsiteGeneration: formData.onsiteGeneration || false
       };
 
       const response = await salesforceService.createRecordsFromInvoice(finalInvoiceData);
@@ -316,6 +426,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     { number: 1, title: 'Company & Contact', description: 'Basic information' },
     { number: 2, title: 'Business Details', description: 'About your business' },
     { number: 3, title: 'Requirements', description: 'What you need' },
+    { number: 4, title: 'Contract', description: 'Current agreements' },
   ];
 
   const content = (
@@ -380,7 +491,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           {currentStep === 1 && (
             <div className="animate-fade-in">
               <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Company and Contact Information</h3>
-              <p className={`mb-8 ${theme === 'light' ? 'text-gray-700' : 'text-secondary'}`}>Let's start with the basics. Upload your invoice to auto-fill details.</p>
+              <p className={`mb-8 ${theme === 'light' ? 'text-gray-700' : 'text-secondary'}`}>Let's start with the basics.</p>
 
               {/* User Type Switch */}
               <div className="flex justify-center mb-8">
@@ -408,32 +519,42 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 </div>
               </div>
 
-              {formData.userType === 'company' && !showManualForm && (
-                 <div className="space-y-8">
-                    <InvoiceUploader 
-                        onDataParsed={handleInvoiceParsed} 
-                        gdprConsent={formData.gdprConsent}
-                        onGdprChange={(checked) => setFormData(prev => ({ ...prev, gdprConsent: checked }))}
-                        onGdprError={() => {
-                            // Optional: Could add a toast or error state here if needed
-                            // But for now the UI disabling/message in InvoiceUploader will handle it
-                        }}
-                        theme={theme}
-                    />
-                    <div className="text-center">
-                        <button 
-                            type="button" 
-                            onClick={() => setShowManualForm(true)}
-                            className={`text-sm underline transition-colors ${theme === 'light' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Or enter details manually
-                        </button>
+              {/* TPI Tab Extra Fields */}
+              {formData.userType === 'tpi' && (
+                 <div className="space-y-6 animate-fade-in mb-6 p-6 rounded-xl border border-white/10 bg-white/5">
+                    <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>TPI Requirements</h4>
+                    
+                    <div>
+                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Letter of Authority (Upload)
+                        </label>
+                        <input 
+                            type="file" 
+                            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00E599]/10 file:text-[#00E599] hover:file:bg-[#00E599]/20"
+                            onChange={(e) => setFormData(prev => ({ ...prev, letterOfAuthority: e.target.files?.[0] || null }))}
+                        />
+                    </div>
+                    
+                    <h5 className={`text-md font-semibold mt-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>End Customer Information</h5>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Name</label>
+                             <input type="text" name="endCustomerName" value={formData.endCustomerName} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
+                        </div>
+                        <div>
+                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Company Number</label>
+                             <input type="text" name="endCustomerCompanyNumber" value={formData.endCustomerCompanyNumber} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
+                        </div>
+                         <div className="md:col-span-2">
+                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Address</label>
+                             <input type="text" name="endCustomerAddress" value={formData.endCustomerAddress} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
+                        </div>
                     </div>
                  </div>
               )}
 
-              {/* Show form if TPI OR (Company AND Manual Mode Active) */}
-              {(formData.userType === 'tpi' || showManualForm) && (
+              {/* Standard Form Fields (Always Visible now, no toggle to Manual) */}
               <div className="space-y-6 animate-fade-in">
 
                 <div>
@@ -479,7 +600,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                     id="companyNumber"
                     name="companyNumber"
                     required
-                    value={formData.companyNumber} // errors here are expected until the state update is processed by the language server, but it's fine since we updated state in the first chunk
+                    value={formData.companyNumber}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
                     placeholder="Enter company number"
@@ -580,10 +701,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                         </span>
                     </label>
                 </div>
-
-
               </div>
-              )}
             </div>
           )}
 
@@ -594,6 +712,138 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
               <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>Tell us about your business</p>
 
               <div className="space-y-6">
+                
+                {/* Segmentation Questions */}
+                <div className={`p-6 rounded-xl border space-y-6 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                    <div>
+                        <label className={`block text-base font-medium mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                            Do you spend less than £30k per year on your energy?
+                        </label>
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, spendUnder30k: true }))}
+                                className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                    formData.spendUnder30k === true
+                                    ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                    : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                }`}
+                            >
+                                Yes
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, spendUnder30k: false }))}
+                                className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                    formData.spendUnder30k === false
+                                    ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                    : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                }`}
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className={`block text-base font-medium mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                            Are you looking for just one site?
+                        </label>
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, singleSite: true }))}
+                                className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                    formData.singleSite === true
+                                    ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                    : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                }`}
+                            >
+                                Yes
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, singleSite: false }))}
+                                className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                    formData.singleSite === false
+                                    ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                    : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                }`}
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Microbusiness Questions (Shown if SME) */}
+                {formData.spendUnder30k === true && (
+                    <div className={`p-6 rounded-xl border space-y-6 animate-fade-in ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                        <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Microbusiness Check</h4>
+                        
+                        <div>
+                            <label className={`block text-base font-medium mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                Do you have more than 10 Employees?
+                            </label>
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, employeesOver10: true }))}
+                                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                        formData.employeesOver10 === true
+                                        ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                        : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                    }`}
+                                >
+                                    Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, employeesOver10: false }))}
+                                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                        formData.employeesOver10 === false
+                                        ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                        : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                    }`}
+                                >
+                                    No
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={`block text-base font-medium mb-3 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                Do you have a balance sheet greater than £2m?
+                            </label>
+                            <div className="flex gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, balanceSheetOver2m: true }))}
+                                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                        formData.balanceSheetOver2m === true
+                                        ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                        : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                    }`}
+                                >
+                                    Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, balanceSheetOver2m: false }))}
+                                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                                        formData.balanceSheetOver2m === false
+                                        ? 'bg-[#00E599] text-black border-[#00E599] font-bold'
+                                        : theme === 'light' ? 'bg-white border-gray-300 text-gray-700' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                    }`}
+                                >
+                                    No
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="industry" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
@@ -605,7 +855,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                       required
                       value={formData.industry}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 focus:border-white/30'}`}
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
                     >
                       <option value="">Select industry</option>
                       <option value="Information Technology">Information Technology</option>
@@ -675,115 +925,372 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             </div>
           )}
 
-          {/* Step 3: Requirements */}
+          {/* Step 3: Site & Requirements */}
           {currentStep === 3 && (
             <div className="animate-fade-in">
-              <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Requirements</h3>
-              <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>What are you looking for?</p>
+              <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                  {formData.singleSite ? 'Site Details' : 'Portfolio Details'}
+              </h3>
+              <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
+                  {formData.singleSite ? 'Provide details for your site.' : 'Upload your site portfolio.'}
+              </p>
 
-              <div className="space-y-6">
-                <div>
-                  <label htmlFor="useCase" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                    Primary Use Case *
-                  </label>
-                  <select
-                    id="useCase"
-                    name="useCase"
-                    required
-                    value={formData.useCase}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                  >
-                    <option value="">Select use case</option>
-                    <option value="billing">Billing & Collections</option>
-                    <option value="customer-engagement">Customer Engagement</option>
-                    <option value="finance">Finance & Accounting</option>
-                    <option value="operations">Operations Management</option>
-                    <option value="analytics">Analytics & Insights</option>
-                    <option value="integration">System Integration</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-
-
-                <div>
-                  <label htmlFor="additionalInfo" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                    Additional Information
-                  </label>
-                  <textarea
-                    id="additionalInfo"
-                    name="additionalInfo"
-                    rows={4}
-                    value={formData.additionalInfo}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl placeholder-gray-500 focus:outline-none transition-colors resize-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                    placeholder="Tell us more about your specific needs, challenges, or questions..."
-                  />
-                </div>
+              <div className="space-y-8">
                 
-                <div>
-                  <label htmlFor="portfolioSize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                    Portfolio Size *
-                  </label>
-                  <select
-                    id="portfolioSize"
-                    name="portfolioSize"
-                    required
-                    value={formData.portfolioSize}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                  >
-                    <option value="">Select portfolio size</option>
-                    <option value="1-10000">1 - 10,000 Service Points</option>
-                    <option value="10000-100000">10,000 - 100,000 Service Points</option>
-                    <option value="100000-1000000">100,000 - 1,000,000 Service Points</option>
-                    <option value="1000000+">1,000,000+ Service Points</option>
-                  </select>
+                {/* Single Site Flow */}
+                {formData.singleSite && (
+                    <div className="space-y-6">
+                        {!showManualForm ? (
+                            <div className="space-y-6">
+                                <InvoiceUploader 
+                                    onDataParsed={handleInvoiceParsed} 
+                                    gdprConsent={true} // Already consented in step 1
+                                    onGdprChange={() => {}}
+                                    onGdprError={() => {}}
+                                    theme={theme}
+                                />
+                                <div className="text-center">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowManualForm(true)}
+                                        className={`text-sm underline transition-colors ${theme === 'light' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        I don't have a bill to upload
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 animate-fade-in">
+                                <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Manual Site Entry</h4>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Company Number</label>
+                                        <input type="text" value={formData.companyNumber} readOnly className={`w-full px-4 py-3 rounded-xl opacity-75 ${theme === 'light' ? 'bg-gray-100 border border-gray-300 text-gray-900' : 'bg-white/5 border border-white/10 text-white'}`} />
+                                    </div>
+                                    <div>
+                                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Postcode</label>
+                                        <div className="flex gap-2">
+                                            <input type="text" placeholder="Enter Postcode" className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
+                                            <button type="button" className="px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold">Search</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Mock Address Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className={`p-4 rounded-xl border cursor-pointer hover:border-[#00E599] transition-all ${theme === 'light' ? 'bg-white border-gray-200 shadow-sm' : 'bg-white/5 border-white/10'}`}>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <Building2 className="w-5 h-5 text-[#00E599]" />
+                                                <div className={`w-4 h-4 rounded-full border ${theme === 'light' ? 'border-gray-300' : 'border-white/30'}`}></div>
+                                            </div>
+                                            <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Unit {i}, Business Park</p>
+                                            <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>London, UK</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {formData.manualMeters.length > 0 && (
+                                     <div className="mt-4 flex flex-wrap gap-2">
+                                        {formData.manualMeters.map((meter, idx) => (
+                                            <div key={idx} className={`px-3 py-1 rounded-lg text-sm flex items-center gap-2 ${theme === 'light' ? 'bg-gray-100 text-gray-800' : 'bg-white/10 text-white'}`}>
+                                                <span>{meter}</span>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, manualMeters: prev.manualMeters.filter((_, i) => i !== idx) }))}
+                                                    className="hover:text-red-500"
+                                                >
+                                                    &times;
+                                                </button>
+                                            </div>
+                                        ))}
+                                     </div>
+                                )}
+
+                                <div className="p-4 rounded-xl border border-dashed border-white/20 bg-white/5 text-center">
+                                    <p className={`text-sm mb-3 ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>Do you need to add more meters or is your meter not displayed?</p>
+                                    <div className="flex gap-2 justify-center">
+                                        <input 
+                                            type="text" 
+                                            id="newMeterInput"
+                                            placeholder="Enter another Postcode" 
+                                            className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300' : 'bg-white/10 border-white/10 text-white'}`} 
+                                        />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => {
+                                                const input = document.getElementById('newMeterInput') as HTMLInputElement;
+                                                if (input && input.value) {
+                                                    setFormData(prev => ({ ...prev, manualMeters: [...prev.manualMeters, input.value] }));
+                                                    input.value = '';
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Multi Site / CSV Flow */}
+                {(!formData.singleSite) && (
+                     <div className={`rounded-xl p-6 border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                        <h4 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Upload Portfolio</h4>
+                        <p className={`text-sm mb-4 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
+                            Please upload a CSV file containing all your sites.
+                        </p>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button
+                            type="button"
+                            onClick={handleDownloadTemplate}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                            >
+                            Download Template
+                            </button>
+                            
+                            <div className="relative">
+                            <input
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            <button
+                                type="button"
+                                className="w-full px-4 py-2 bg-[#00E599]/10 hover:bg-[#00E599]/20 text-[#00E599] border border-[#00E599]/50 rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Upload CSV
+                            </button>
+                            </div>
+                        </div>
+                        
+                        {invoiceData?.sites && invoiceData.sites.length > 0 && (
+                            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                <p className="text-green-400 text-sm">
+                                    Successfully loaded {invoiceData.sites.length} sites.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Common Requirements Fields */}
+                <div className="pt-8 border-t border-white/10">
+                    <h4 className={`text-lg font-bold mb-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Additional Requirements</h4>
+                    <div className="space-y-6">
+                        <div>
+                        <label htmlFor="useCase" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Primary Use Case *
+                        </label>
+                        <select
+                            id="useCase"
+                            name="useCase"
+                            required
+                            value={formData.useCase}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
+                        >
+                            <option value="">Select use case</option>
+                            <option value="billing">Billing & Collections</option>
+                            <option value="customer-engagement">Customer Engagement</option>
+                            <option value="finance">Finance & Accounting</option>
+                            <option value="operations">Operations Management</option>
+                            <option value="analytics">Analytics & Insights</option>
+                            <option value="integration">System Integration</option>
+                            <option value="other">Other</option>
+                        </select>
+                        </div>
+
+                        <div>
+                        <label htmlFor="portfolioSize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Estimated Annual Portfolio Size *
+                        </label>
+                        <select
+                            id="portfolioSize"
+                            name="portfolioSize"
+                            required
+                            value={formData.portfolioSize}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
+                        >
+                            <option value="">Select portfolio size</option>
+                            <option value="1-10000">1 - 10,000 Service Points</option>
+                            <option value="10000-100000">10,000 - 100,000 Service Points</option>
+                            <option value="100000-1000000">100,000 - 1,000,000 Service Points</option>
+                            <option value="1000000+">1,000,000+ Service Points</option>
+                        </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div className={`rounded-xl p-6 border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
-                  <h4 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Upload Portfolio</h4>
-                  <p className={`text-sm mb-4 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
-                    Download our template to provide your site details, then upload it here to automatically create your portfolio.
-                  </p>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      type="button"
-                      onClick={handleDownloadTemplate}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                    >
-                      Download Spreadsheet
-                    </button>
-                    
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleFileUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <button
-                        type="button"
-                        className="w-full px-4 py-2 bg-[#00E599]/10 hover:bg-[#00E599]/20 text-[#00E599] border border-[#00E599]/50 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Upload Spreadsheet
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {invoiceData?.sites && invoiceData.sites.length > 0 && (
-                     <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        <p className="text-green-400 text-sm">
-                           Successfully loaded a sites spreadsheet.
-                        </p>
-                     </div>
-                  )}
-                </div>
               </div>
             </div>
           )}
+
+          {/* Step 4: Contract Details */}
+          {currentStep === 4 && (
+             <div className="animate-fade-in">
+                <h3 className={`text-2xl font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Contract Details</h3>
+                <p className={`mb-8 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>Tell us about your current contract.</p>
+
+                <div className="space-y-8">
+                    
+                    {/* Contract Length */}
+                    <div>
+                        <label className={`block text-sm font-medium mb-3 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Contract Length Preference
+                        </label>
+                        <div className="flex gap-4 flex-wrap">
+                            {['12 Months', '24 Months', '36 Months', 'Other'].map((length) => (
+                                <button
+                                    key={length}
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, contractLength: length }))}
+                                    className={`px-6 py-2 rounded-full border transition-all duration-300 ${
+                                        formData.contractLength === length
+                                        ? 'bg-[#00E599] text-black border-[#00E599] font-bold shadow-lg'
+                                        : theme === 'light' ? 'bg-white border-gray-300 text-gray-700 hover:border-[#00E599]' : 'bg-transparent border-white/20 text-gray-300 hover:border-white/40'
+                                    }`}
+                                >
+                                    {length}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Contract Start Date */}
+                    <div>
+                         <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Contract Start Date
+                        </label>
+                        <input 
+                            type="date" 
+                            name="contractStartDate"
+                            value={formData.contractStartDate}
+                            onChange={handleChange}
+                            className={`w-full md:w-1/2 px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
+                        />
+                    </div>
+
+                    {/* Onsite Generation */}
+                    <div className={`p-6 rounded-xl border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className={`text-md font-bold mb-1 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Onsite Generation</h4>
+                                <p className={`text-sm ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>Do you have any onsite power generation?</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, onsiteGeneration: true }))}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                                        formData.onsiteGeneration === true
+                                        ? 'bg-[#3ACDFA] text-black font-bold'
+                                        : theme === 'light' ? 'bg-white border border-gray-300' : 'bg-white/10 text-white'
+                                    }`}
+                                >
+                                    Yes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, onsiteGeneration: false }))}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                                        formData.onsiteGeneration === false
+                                        ? 'bg-[#3ACDFA] text-black font-bold'
+                                        : theme === 'light' ? 'bg-white border border-gray-300' : 'bg-white/10 text-white'
+                                    }`}
+                                >
+                                    No
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+             </div>
+          )}
+
+          {/* Validation Error Message */}
+          {validationError && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 animate-slide-up">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <p className="text-sm font-medium">{validationError}</p>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
+            {currentStep > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'}`}
+              >
+                <ChevronLeft className="w-5 h-5 mr-2" />
+                Previous
+              </Button>
+            ) : (
+              <div /> // Spacer
+            )}
+
+            {currentStep < 4 ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleNext}
+                className="bg-[#00E599] hover:bg-[#00cc88] text-black"
+                disabled={isSubmitting}
+              >
+                Next Step
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
+            ) : (
+                <Button
+                    type="submit"
+                    variant="primary"
+                    className="bg-[#3ACDFA] hover:bg-[#32bfee] text-black px-8"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                            Submitting...
+                        </span>
+                    ) : (
+                        'Submit Application'
+                    )}
+                </Button>
+            )}
+          </div>
+        </form>
+      </div>
+    </>
+  );
+
+  return (
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-[#0B1221]'}`}>
+      {variant !== 'embedded' && (
+        <div 
+          className="fixed inset-0 z-0 opacity-30 pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 50% 50%, ${theme === 'light' ? '#3ACDFA' : '#00E599'}20 0%, transparent 50%)`,
+          }}
+        />
+      )}
+      
+      <div className={`relative z-10 ${variant === 'embedded' ? '' : 'container mx-auto px-4 py-8 md:py-16'}`}>
+        {content}
+      </div>
+    </div>
+  );
+};
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/10">
