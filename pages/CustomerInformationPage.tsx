@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { B2BForm } from '../components/B2BForm';
 
@@ -20,6 +20,7 @@ const assets = {
 };
 
 export const CustomerInformationPage: React.FC = () => {
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   return (
     <div className="bg-white min-h-screen text-gray-900 font-['Roboto'] selection:bg-[#2CD8A6]/30 relative overflow-hidden">
@@ -58,12 +59,14 @@ export const CustomerInformationPage: React.FC = () => {
       {/* Get Started Section */}
       <section className="py-24 px-4 md:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-bold mb-6 text-gray-900">Get Started Today</h2>
-            <p className="text-xl text-gray-600">Fill out the form below and our team will get back to you with a tailored energy solution for your business.</p>
-          </div>
+          {!formSubmitted && (
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-bold mb-6 text-gray-900">Get Started Today</h2>
+              <p className="text-xl text-gray-600">Fill out the form below and our team will get back to you with a tailored energy solution for your business.</p>
+            </div>
+          )}
           
-          <B2BForm theme="light" variant="embedded" />
+          <B2BForm theme="light" variant="embedded" onSuccess={() => setFormSubmitted(true)} />
         </div>
       </section>
 

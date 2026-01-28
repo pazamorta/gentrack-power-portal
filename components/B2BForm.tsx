@@ -9,9 +9,10 @@ type Step = 1 | 2 | 3 | 4;
 interface B2BFormProps {
   theme?: 'light' | 'dark';
   variant?: 'default' | 'embedded';
+  onSuccess?: () => void;
 }
 
-export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'default' }) => {
+export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'default', onSuccess }) => {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [formData, setFormData] = useState({
     userType: 'company',
@@ -302,24 +303,6 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   const handleNext = async () => {
     if (validateStep(currentStep) && currentStep < 4) {
-      // Create Lead on Step 1 completion
-      if (currentStep === 1) {
-          try {
-              console.log('Creating Lead...');
-              // Only create if we don't have one? Or update? For MVP, always create new if not present.
-              if (!formData.leadId) {
-                  const res = await salesforceService.createLead(formData);
-                  if (res.success && res.leadId) {
-                      setFormData(prev => ({ ...prev, leadId: res.leadId! }));
-                      console.log('Lead created:', res.leadId);
-                  }
-              }
-          } catch (e) {
-              console.error('Failed to create lead:', e);
-              // We proceed anyway, not blocking user flow
-          }
-      }
-      
       setCurrentStep((prev) => (prev + 1) as Step);
     }
   };
@@ -382,6 +365,9 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         setSubmissionSuccess(response.records);
         // Scroll to top to show the success message clearly
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (onSuccess) {
+            onSuccess();
+        }
       } else {
            alert('Submission processed, but there might be a delay in Salesforce updates.');
       }
@@ -405,9 +391,10 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             </div>
             
             <h2 className="text-3xl font-display font-bold text-white mb-4">Application Submitted!</h2>
-            <p className="text-gray-400 mb-8 max-w-xl mx-auto">
+            <p className="text-xl md:text-2xl text-white mb-8 max-w-2xl mx-auto font-bold">
                 Thank you. Your request has been successfully processed. 
-                Your lead has been converted, and the following records have been created in Salesforce.
+                <br /><br />
+                We will get back to you with a competitive offer for your business.
             </p>
 
             <div className="mt-12">
@@ -486,7 +473,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className={`rounded-3xl p-8 md:p-12 backdrop-blur-md ${theme === 'light' ? 'bg-white border border-gray-200 shadow-lg' : 'bg-surface/30 border border-white/5'}`}>
+        <form onSubmit={handleSubmit} className="p-8 md:p-12 animate-fade-in">
           {/* Step 1: Company and Contact Information */}
           {currentStep === 1 && (
             <div className="animate-fade-in">
@@ -1241,16 +1228,15 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             )}
 
             {currentStep < 4 ? (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleNext}
-                className="bg-[#00E599] hover:bg-[#00cc88] text-black"
-                disabled={isSubmitting}
-              >
-                Next Step
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleNext}
+                  className="bg-[#00E599] hover:bg-[#00cc88] text-black w-14 h-14 !p-0 rounded-full flex items-center justify-center"
+                  disabled={isSubmitting}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
             ) : (
                 <Button
                     type="submit"
