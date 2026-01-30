@@ -574,40 +574,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 </div>
               </div>
 
-              {/* TPI Tab Extra Fields */}
-              {formData.userType === 'tpi' && (
-                 <div className="space-y-6 animate-fade-in mb-6 p-6 rounded-xl border border-white/10 bg-white/5">
-                    <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>TPI Requirements</h4>
-                    
-                    <div>
-                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                            Letter of Authority (Upload)
-                        </label>
-                        <input 
-                            type="file" 
-                            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00E599]/10 file:text-[#00E599] hover:file:bg-[#00E599]/20"
-                            onChange={(e) => setFormData(prev => ({ ...prev, letterOfAuthority: e.target.files?.[0] || null }))}
-                        />
-                    </div>
-                    
-                    <h5 className={`text-md font-semibold mt-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>End Customer Information</h5>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Name</label>
-                             <input type="text" name="endCustomerName" value={formData.endCustomerName} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
-                        </div>
-                        <div>
-                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Company Number</label>
-                             <input type="text" name="endCustomerCompanyNumber" value={formData.endCustomerCompanyNumber} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
-                        </div>
-                         <div className="md:col-span-2">
-                             <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>End Customer Address</label>
-                             <input type="text" name="endCustomerAddress" value={formData.endCustomerAddress} onChange={handleChange} className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
-                        </div>
-                    </div>
-                 </div>
-              )}
+
 
               {/* Standard Form Fields (Always Visible now, no toggle to Manual) */}
               <div className="space-y-6 animate-fade-in">
@@ -742,6 +709,19 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                     />
                   </div>
                 </div>
+
+                {formData.userType === 'tpi' && (
+                    <div className="mt-6 mb-2">
+                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                            Letter of Authority (Upload)
+                        </label>
+                        <input 
+                            type="file" 
+                            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00E599]/10 file:text-[#00E599] hover:file:bg-[#00E599]/20"
+                            onChange={(e) => setFormData(prev => ({ ...prev, letterOfAuthority: e.target.files?.[0] || null }))}
+                        />
+                    </div>
+                )}
 
                 <div className={`mt-4 p-4 rounded-xl border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
                     <label className="flex items-start gap-3 cursor-pointer">
