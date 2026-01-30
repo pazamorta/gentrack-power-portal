@@ -869,7 +869,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 opportunityId,
                 contentDocumentId: fileId ? (await query(`SELECT ContentDocumentId FROM ContentVersion WHERE Id = '${fileId}'`)).records[0]?.ContentDocumentId : null,
                 stage: stageName,
-                sitesCreated: createdPremises.length,
+                sitesCreated: createdProperties.length,
                 servicePointsCreated: createdServicePoints.length,
                 servicePoints: createdServicePoints
             }
