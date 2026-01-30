@@ -633,8 +633,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         const estimatedAnnualConsumption = data.annualConsumption || (data.totalConsumption ? data.totalConsumption * 12 : 0);
         const opportunityAmount = estimatedAnnualConsumption * 80;
 
-        // Fetch RecordTypeId for GTCX_B2B_Opportunity
-        const oppRecordTypeId = await getRecordTypeId('Opportunity', 'GTCX_B2B_Opportunity');
+        // Fetch RecordTypeId for Regulated_Electricity
+        const oppRecordTypeId = await getRecordTypeId('Opportunity', 'Regulated_Electricity');
 
         const opportunityFields = {
             StageName: stageName,
