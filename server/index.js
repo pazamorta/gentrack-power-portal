@@ -722,43 +722,63 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         }
 
         // 4. SITES AND SERVICE POINTS (Common Logic)
-        const createdPremises = [];
+        const createdProperties = []; // Renamed from Premises
         const createdServicePoints = [];
 
         if (data.sites && data.sites.length > 0) {
             console.log(`Processing ${data.sites.length} sites...`);
             for (const site of data.sites) {
-                const premisesResult = await createRecord('vlocity_cmt__Premises__c', {
-                    Name: site.name || 'Site',
-                    vlocity_cmt__StreetAddress__c: site.address || undefined,
-                    vlocity_cmt__Status__c: 'Active',
-                    vlocity_cmt__PremisesType__c: 'Commercial'
+                // Construct Property Name: AccountName + Postcode
+                // Fallback to "Property" if missing
+                const postcode = site.postcodeComponent || site.postcode || '';
+                const street = site.addressComponent || site.address || '';
+                const propertyName = `${data.companyName} ${postcode}`.trim() || `Property ${site.name}`;
+
+                // Create GTCX_Property__c
+                // Assumes Custom Address Field: GTCX_Address__c (Components: GTCX_Address__Street__s, GTCX_Address__PostalCode__s)
+                const propertyResult = await createRecord('GTCX_Property__c', {
+                    Name: propertyName,
+                    GTCX_Account__c: accountId,
+                    GTCX_Address__Street__s: street,
+                    GTCX_Address__PostalCode__s: postcode
+                    // GTCX_Address__City__s? Country? State? - Leaving blank as not provided
                 });
 
-                if (premisesResult.success) {
-                    const premisesId = premisesResult.id;
-                    createdPremises.push({ id: premisesId, name: site.name });
+                if (propertyResult.success) {
+                    const propertyId = propertyResult.id;
+                    createdProperties.push({ id: propertyId, name: propertyName });
 
                     if (site.meterPoints && site.meterPoints.length > 0) {
                         for (const meterPoint of site.meterPoints) {
+                            const marketIdentifier = meterPoint.meterNumber || '';
+                            const fuelType = meterPoint.fuelType || 'Electricity';
+                            
+                            // Construct Service Point Name: Postcode + MarketIdentifier
+                            const servicePointName = `${postcode} ${marketIdentifier}`.trim() || 'Service Point';
+
                             const servicePointResult = await createRecord('GTCX_Service_Point__c', {
-                                Name: meterPoint.meterNumber || 'Service Point',
-                                GTCX_Fuel_Type__c: meterPoint.fuelType || 'Electricity',
-                                GTCX_Postcode__c: meterPoint.postcode || undefined,
+                                Name: servicePointName,
+                                GTCX_Market_Identifier__c: marketIdentifier,
+                                GTCX_Service_Type__c: fuelType,
+                                GTCX_Property__c: propertyId, // Link to Property
                                 GTCX_Opportunity__c: opportunityId,
                                 GTCX_Annual_Consumption__c: meterPoint.annualConsumption || data.totalConsumption || undefined,
                                 GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
                                 GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
+                                // GTCX_Contact_Name__c, Email, Phone - keeping these if they exist on the object
                                 GTCX_Contact_Name__c: meterPoint.contactName || undefined,
                                 GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
                                 GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
                                 GTCX_Company_Number__c: meterPoint.companyNumber || undefined
                             });
+
                             if (servicePointResult.success) {
-                                createdServicePoints.push({ id: servicePointResult.id, mpan: meterPoint.mpan });
+                                createdServicePoints.push({ id: servicePointResult.id, mpan: marketIdentifier });
                             }
                         }
                     }
+                } else {
+                     console.error('Failed to create GTCX_Property__c:', propertyResult.errors);
                 }
             }
         }

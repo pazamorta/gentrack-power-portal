@@ -258,6 +258,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         sitesMap.set(siteName, {
           name: siteName,
           address: `${getValue('Address')} ${getValue('Postcode')}`.trim(),
+          addressComponent: getValue('Address'),
+          postcodeComponent: getValue('Postcode'),
           meterPoints: []
         });
       }
