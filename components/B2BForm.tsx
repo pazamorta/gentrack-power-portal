@@ -462,9 +462,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             
             <h2 className="text-3xl font-display font-bold text-white mb-4">Application Submitted!</h2>
             <p className="text-xl md:text-2xl text-white mb-8 max-w-2xl mx-auto font-bold">
-                Thank you. Your request has been successfully processed. 
-                <br /><br />
-                We will get back to you with a competitive offer for your business.
+                Thanks for trusting Oxygen with your company's energy needs. We will get back to you very soon.
             </p>
 
             <div className="mt-12">
