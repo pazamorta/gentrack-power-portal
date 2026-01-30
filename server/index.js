@@ -446,9 +446,15 @@ app.patch('/api/salesforce/opportunity/:id', async (req, res) => {
         };
         
         // Handle specific mappings
-        if (data.contractStartDate) fieldsToUpdate.CloseDate = data.contractStartDate;
-        if (data.contractLength) fieldsToUpdate.Description = (fieldsToUpdate.Description || '') + `\nContract Length: ${data.contractLength}`;
-        if (data.onsiteGeneration !== undefined) fieldsToUpdate.Description = (fieldsToUpdate.Description || '') + `\nOnsite Generation: ${data.onsiteGeneration ? 'Yes' : 'No'}`;
+        if (data.contractStartDate) fieldsToUpdate.GTCX_Estimated_Contract_Start_Date__c = data.contractStartDate;
+        if (data.contractLength) fieldsToUpdate.GTCX_Contract_Length__c = data.contractLength;
+        if (data.onsiteGeneration !== undefined) fieldsToUpdate.GTCX_Onsite_Generation__c = data.onsiteGeneration;
+        
+        // Remove standard/description mappings if they are no longer needed, or keep as fallback? 
+        // User asked to update the *following fields*, implying specific mapping. I will remove the old description mappings to keep it clean.
+        delete fieldsToUpdate.contractStartDate;
+        delete fieldsToUpdate.contractLength;
+        delete fieldsToUpdate.onsiteGeneration;
 
         await updateRecord('Opportunity', id, fieldsToUpdate);
         
