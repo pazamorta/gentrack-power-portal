@@ -100,6 +100,29 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const salesforceService = {
     /**
+     * Update an Opportunity in Salesforce
+     */
+    updateOpportunity: async (opportunityId: string, data: any): Promise<{ success: boolean; message?: string }> => {
+        try {
+            const response = await fetch(`${API_URL}/api/salesforce/opportunity/${opportunityId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || `Server error: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('❌ Update Opportunity error:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Create a Lead in Salesforce
      */
     createLead: async (data: any): Promise<{ success: boolean; leadId?: string; message?: string }> => {

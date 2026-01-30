@@ -430,7 +430,37 @@ app.post('/api/salesforce/lead', async (req, res) => {
  * POST /api/salesforce/invoice
  * Uses Standard Lead Conversion if leadId is present
  */
-app.post('/api/salesforce/invoice', async (req, res) => {
+/**
+ * Update an Opportunity
+ * PATCH /api/salesforce/opportunity/:id
+ */
+app.patch('/api/salesforce/opportunity/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+        console.log(`[PATCH] Updating Opportunity ${id}`, data);
+
+        // Map frontend fields to Salesforce fields if necessary
+        const fieldsToUpdate = {
+            ...data
+        };
+        
+        // Handle specific mappings
+        if (data.contractStartDate) fieldsToUpdate.CloseDate = data.contractStartDate;
+        if (data.contractLength) fieldsToUpdate.Description = (fieldsToUpdate.Description || '') + `\nContract Length: ${data.contractLength}`;
+        if (data.onsiteGeneration !== undefined) fieldsToUpdate.Description = (fieldsToUpdate.Description || '') + `\nOnsite Generation: ${data.onsiteGeneration ? 'Yes' : 'No'}`;
+
+        await updateRecord('Opportunity', id, fieldsToUpdate);
+        
+        res.json({ success: true, message: 'Opportunity updated successfully' });
+    } catch (error) {
+        console.error('❌ Update Opportunity error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Handle Full Form Submission (Invoice + Details)
     try {
         const data = req.body;
         console.log('[POST] /api/salesforce/invoice - Origin:', req.headers.origin);
