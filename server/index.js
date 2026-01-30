@@ -761,7 +761,6 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                                 GTCX_Market_Identifier__c: marketIdentifier,
                                 GTCX_Service_Type__c: fuelType,
                                 GTCX_Property__c: propertyId, // Link to Property
-                                GTCX_Opportunity__c: opportunityId,
                                 GTCX_Annual_Consumption__c: meterPoint.annualConsumption || data.totalConsumption || undefined,
                                 GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
                                 GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
