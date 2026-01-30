@@ -1234,6 +1234,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                   onClick={handleNext}
                   className="bg-[#00E599] hover:bg-[#00cc88] text-black w-14 h-14 !p-0 rounded-full flex items-center justify-center"
                   disabled={isSubmitting}
+                  icon={false}
                 >
                   <ChevronRight className="w-6 h-6" />
                 </Button>
@@ -1261,7 +1262,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   );
 
   return (
-    <div className={`min-h-screen ${theme === 'light' ? 'bg-gray-50' : 'bg-[#0B1221]'}`}>
+    <div className={`min-h-screen ${theme === 'light' ? 'bg-white' : 'bg-[#0B1221]'}`}>
       {variant !== 'embedded' && (
         <div 
           className="fixed inset-0 z-0 opacity-30 pointer-events-none"
