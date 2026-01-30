@@ -1266,10 +1266,12 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 type="button"
                 variant="outline"
                 onClick={handlePrevious}
-                className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'}`}
+                className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'} flex items-center justify-center`}
               >
-                <ChevronLeft className="w-5 h-5 mr-2" />
-                Previous
+                <div className="flex items-center flex-nowrap whitespace-nowrap">
+                   <ChevronLeft className="w-5 h-5 mr-2 flex-shrink-0" />
+                   <span>Previous</span>
+                </div>
               </Button>
             ) : (
               <div /> // Spacer
