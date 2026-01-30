@@ -763,7 +763,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                             const servicePointName = `${postcode} ${marketIdentifier}`.trim() || 'Service Point';
 
                             const servicePointResult = await createRecord('GTCX_Service_Point__c', {
-                                Name: servicePointName,
+                                // Name is Auto Number, do not set
                                 GTCX_Market_Identifier__c: marketIdentifier,
                                 GTCX_Service_Type__c: fuelType,
                                 GTCX_Property__c: propertyId, // Link to Property
