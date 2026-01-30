@@ -461,6 +461,10 @@ app.patch('/api/salesforce/opportunity/:id', async (req, res) => {
 
 /**
  * Handle Full Form Submission (Invoice + Details)
+ * POST /api/salesforce/invoice
+ * Uses Standard Lead Conversion if leadId is present
+ */
+app.post('/api/salesforce/invoice', async (req, res) => {
     try {
         const data = req.body;
         console.log('[POST] /api/salesforce/invoice - Origin:', req.headers.origin);
