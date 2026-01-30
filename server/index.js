@@ -751,7 +751,13 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     if (site.meterPoints && site.meterPoints.length > 0) {
                         for (const meterPoint of site.meterPoints) {
                             const marketIdentifier = meterPoint.meterNumber || '';
-                            const fuelType = meterPoint.fuelType || 'Electricity';
+                            // Normalize Fuel Type
+                            let rawFuel = (meterPoint.fuelType || 'Electricity').toLowerCase();
+                            let normalizedFuel = 'Electricity';
+                            if (rawFuel.includes('gas')) normalizedFuel = 'Gas';
+                            else if (rawFuel.includes('water')) normalizedFuel = 'Water';
+                            
+                            const fuelType = normalizedFuel;
                             
                             // Construct Service Point Name: Postcode + MarketIdentifier
                             const servicePointName = `${postcode} ${marketIdentifier}`.trim() || 'Service Point';
