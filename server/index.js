@@ -388,7 +388,19 @@ app.post('/api/salesforce/lead', async (req, res) => {
             leadData.Description += `\nTPI Identifier: ${data.tpiIdentifier}`;
         }
 
-        const leadResult = await createRecord('Lead', leadData);
+        let leadResult;
+        try {
+            leadResult = await createRecord('Lead', leadData);
+        } catch (initialError) {
+             // Retry without RecordTypeId if it fails due to record type issues
+             if (leadData.RecordTypeId && initialError.message.includes('INVALID_CROSS_REFERENCE_KEY') || initialError.message.includes('invalid record type') || initialError.message.includes('INSUFFICIENT_ACCESS')) {
+                 console.warn('⚠️ Creation with RecordTypeId failed. Retrying without RecordTypeId...');
+                 delete leadData.RecordTypeId;
+                 leadResult = await createRecord('Lead', leadData);
+             } else {
+                 throw initialError;
+             }
+        }
 
         if (!leadResult.success) {
             throw new Error('Failed to create Lead: ' + JSON.stringify(leadResult.errors));
@@ -608,13 +620,31 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         } else {
             // Create new if manual flow
             console.log('Creating new opportunity...');
-            const oppResult = await createRecord('Opportunity', {
-                Name: `${data.companyName} - ${data.useCase || 'Energy'} Opportunity`,
-                AccountId: accountId,
-                ContactId: contactId,
-                ...opportunityFields
-            });
-            if (oppResult.success) opportunityId = oppResult.id;
+            try {
+                const oppResult = await createRecord('Opportunity', {
+                    Name: `${data.companyName} - ${data.useCase || 'Energy'} Opportunity`,
+                    AccountId: accountId,
+                    ContactId: contactId,
+                    ...opportunityFields
+                });
+                if (oppResult.success) opportunityId = oppResult.id;
+            } catch (oppError) {
+                 // Retry without RecordTypeId for Opportunity as well
+                 if (opportunityFields.RecordTypeId && (oppError.message.includes('INVALID_CROSS_REFERENCE_KEY') || oppError.message.includes('invalid record type') || oppError.message.includes('INSUFFICIENT_ACCESS'))) {
+                     console.warn('⚠️ Opportunity creation with RecordTypeId failed. Retrying without RecordTypeId...');
+                     delete opportunityFields.RecordTypeId;
+                     const retryOppResult = await createRecord('Opportunity', {
+                        Name: `${data.companyName} - ${data.useCase || 'Energy'} Opportunity`,
+                        AccountId: accountId,
+                        ContactId: contactId,
+                        ...opportunityFields
+                     });
+                     if (retryOppResult.success) opportunityId = retryOppResult.id;
+                 } else {
+                     console.error('Failed to create Opportunity:', oppError);
+                     // Proceed without opp? No, better to let it fail or log
+                 }
+            }
         }
 
         // 4. SITES AND SERVICE POINTS (Common Logic)
