@@ -1304,10 +1304,10 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                   disabled={isSubmitting}
                   icon={false}
                 >
-                  <span className="flex items-center">
+                  <div className="flex items-center flex-nowrap whitespace-nowrap">
                     <span className="mr-2">Next</span>
-                    <ChevronRight className="w-5 h-5" />
-                  </span>
+                    <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                  </div>
                 </Button>
             ) : (
                 <Button

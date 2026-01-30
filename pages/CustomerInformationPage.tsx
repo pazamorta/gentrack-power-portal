@@ -57,7 +57,7 @@ export const CustomerInformationPage: React.FC = () => {
       </section>
 
       {/* Get Started Section */}
-      <section className="py-24 px-4 md:px-8">
+      <section className="pt-24 pb-12 px-4 md:px-8">
         <div className="max-w-4xl mx-auto">
           {!formSubmitted && (
             <div className="text-center mb-12">
