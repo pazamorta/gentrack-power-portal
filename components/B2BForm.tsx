@@ -1232,11 +1232,12 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                   type="button"
                   variant="primary"
                   onClick={handleNext}
-                  className="bg-[#00E599] hover:bg-[#00cc88] text-black w-14 h-14 !p-0 rounded-full flex items-center justify-center"
+                  className="bg-[#00E599] hover:bg-[#00cc88] text-black px-6 md:px-8 py-3 rounded-full flex items-center justify-center font-medium transition-all"
                   disabled={isSubmitting}
                   icon={false}
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  <span className="mr-2">Next</span>
+                  <ChevronRight className="w-5 h-5" />
                 </Button>
             ) : (
                 <Button
