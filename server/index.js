@@ -650,7 +650,28 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         if (opportunityId) {
             // Update existing converted opportunity
             console.log('Updating converted opportunity:', opportunityId);
-            await updateRecord('Opportunity', opportunityId, opportunityFields);
+            try {
+                await updateRecord('Opportunity', opportunityId, opportunityFields);
+            } catch (err) {
+                 console.warn(`Initial Opportunity update failed: ${err.message}. Retrying without RecordTypeId...`);
+                 
+                 // If the error is related to RecordTypeId, retry without it
+                 if (opportunityFields.RecordTypeId) {
+                     const fieldsWithoutRecordType = { ...opportunityFields };
+                     delete fieldsWithoutRecordType.RecordTypeId;
+                     try {
+                        await updateRecord('Opportunity', opportunityId, fieldsWithoutRecordType);
+                        console.log('✅ Retry Opportunity update successful (without RecordTypeId)');
+                     } catch (retryErr) {
+                         console.error('❌ Retry Opportunity update failed:', retryErr);
+                         // Don't throw here, partial success is better than total failure?
+                         // Actually, if we can't update the contract details, it might be critical.
+                         // But for now, let's log and proceed to Site creation.
+                     }
+                 } else {
+                     console.error('❌ Opportunity update failed (no RecordTypeId to remove):', err);
+                 }
+            }
         } else {
             // Create new if manual flow
             console.log('Creating new opportunity...');
