@@ -508,8 +508,26 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 console.warn('   Could not update Lead before conversion (might be already converted?):', e.message);
             }
 
-            // B. Perform Conversion
-            const convertedStatus = await getConvertedStatus();
+            // CHECK IF ALREADY CONVERTED
+            let isAlreadyConverted = false;
+            try {
+                const leadStatusQuery = await query(`SELECT IsConverted, ConvertedAccountId, ConvertedContactId, ConvertedOpportunityId FROM Lead WHERE Id = '${data.leadId}'`);
+                if (leadStatusQuery.totalSize > 0 && leadStatusQuery.records[0].IsConverted) {
+                    console.log('ℹ️ Lead is ALREADY CONVERTED. Skipping SOAP Conversion.');
+                    const convertedLead = leadStatusQuery.records[0];
+                    accountId = convertedLead.ConvertedAccountId;
+                    contactId = convertedLead.ConvertedContactId;
+                    opportunityId = convertedLead.ConvertedOpportunityId;
+                    isAlreadyConverted = true;
+                    console.log('   Using existing Converted IDs:', accountId, contactId, opportunityId);
+                }
+            } catch (err) {
+                console.error('Error checking lead conversion status:', err);
+            }
+
+            // B. Perform Conversion (Only if not already converted)
+            if (!isAlreadyConverted) {
+                const convertedStatus = await getConvertedStatus();
             // B. Perform Conversion via SOAP API (since REST LeadConvert is not standard)
             // const convertedStatus = await getConvertedStatus(); // Already declared
             
@@ -566,6 +584,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 console.log('✅ Lead Converted Successfully via SOAP!');
                 console.log('   Account:', accountId, 'Contact:', contactId, 'Opp:', opportunityId);
             }
+        }
         }
 
         // 2. FALLBACK / MANUAL FLOW (If no leadId OR Conversion Failed)
