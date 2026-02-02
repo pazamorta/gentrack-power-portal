@@ -408,9 +408,54 @@ app.post('/api/salesforce/lead', async (req, res) => {
 
         console.log('✅ Created Lead:', leadResult.id);
 
+        let contentDocumentId = null;
+        if (leadResult.success && data.fileContent && data.fileName) {
+            console.log('📎 Attaching LOA file to Lead...');
+            try {
+                // 1. Create ContentVersion
+                const cvResult = await createRecord('ContentVersion', {
+                    Title: data.fileName,
+                    PathOnClient: data.fileName,
+                    VersionData: data.fileContent,
+                    FirstPublishLocationId: leadResult.id // Try auto-link first
+                });
+
+                if (cvResult.success) {
+                    console.log('   ContentVersion created:', cvResult.id);
+                    
+                    // 2. Query for ContentDocumentId
+                    const cvQuery = await query(`SELECT ContentDocumentId FROM ContentVersion WHERE Id = '${cvResult.id}'`);
+                    contentDocumentId = cvQuery.records[0]?.ContentDocumentId;
+                    
+                    if (contentDocumentId) {
+                        // 3. Explicitly Create ContentDocumentLink (Redundancy for safety)
+                        console.log('   Linking ContentDocument:', contentDocumentId, 'to Lead:', leadResult.id);
+                        try {
+                            await createRecord('ContentDocumentLink', {
+                                ContentDocumentId: contentDocumentId,
+                                LinkedEntityId: leadResult.id,
+                                ShareType: 'V' // Viewer permission
+                            });
+                            console.log('   ✅ ContentDocumentLink created successfully');
+                        } catch (linkErr) {
+                            // Ignore duplicate link error if FirstPublishLocationId worked
+                            if (!linkErr.message.includes('DUPLICATE_VALUE')) {
+                                console.warn('   ⚠️ Failed to create explicit ContentDocumentLink (might already exist):', linkErr.message);
+                            }
+                        }
+                    }
+                } else {
+                    console.error('   Failed to create ContentVersion:', cvResult.errors);
+                }
+            } catch (fileErr) {
+                console.error('   Exception attaching file:', fileErr);
+            }
+        }
+
         res.json({
             success: true,
             leadId: leadResult.id,
+            contentDocumentId,
             message: 'Lead created successfully'
         });
 
