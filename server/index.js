@@ -492,7 +492,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         };
 
         // 1. LEAD CONVERSION FLOW
-        if (data.leadId) {
+        // If TPI, we do NOT convert the lead, we just update it and attach files.
+        if (data.leadId && data.userType !== 'tpi') {
             console.log('🔄 Starting Standard Lead Conversion for:', data.leadId);
 
             // A. Update Lead first with latest form data to ensure mapping is accurate
@@ -802,12 +803,12 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         console.log('Has Account ID:', !!accountId);
         console.log('Has Opportunity ID:', !!opportunityId);
         
-        if (data.fileContent && data.fileName && (accountId || opportunityId)) {
+        if (data.fileContent && data.fileName && (accountId || opportunityId || data.leadId)) {
             console.log('Attempting to upload file to Salesforce...');
             
             // Determine the primary location for the file
-            // Prefer Account if available, fallback to Opportunity
-            const firstPublishLocationId = accountId || opportunityId;
+            // Prefer Account/Opp if available (Conversion flow), else Lead (TPI flow)
+            const firstPublishLocationId = accountId || opportunityId || data.leadId;
             
             // 1. Create ContentVersion
             try {

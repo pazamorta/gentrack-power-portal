@@ -352,6 +352,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 useCase: formData.useCase,
                 portfolioSize: formData.portfolioSize,
                 customerSegment: formData.customerSegment,
+                userType: formData.userType,
                 
                  // Site Data (Manual or File)
                 sites: invoiceData?.sites || [],
