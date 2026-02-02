@@ -29,12 +29,12 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     customerBase: '',
     currentSystems: '',
     energyDomains: [] as string[],
-    useCase: '',
+
     timeline: '',
     budget: '',
     additionalInfo: '',
     gdprConsent: false,
-    portfolioSize: '',
+
     leadId: '',
     // New Fields
     spendUnder30k: null as boolean | null,
@@ -64,6 +64,15 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     opportunityId: string;
     servicePoints?: { id: string; mpan: string }[];
   } | null>(null);
+
+  // Ref to track async operations
+  const promises = React.useRef<{
+      lead: Promise<{ leadId?: string }> | null;
+      opportunity: Promise<any> | null;
+  }>({
+      lead: null,
+      opportunity: null
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -172,13 +181,11 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
              // "If they select not to upload the form then we display... Company Number, Company Postcode"
              // Currently manual entry is triggered by showManualForm state or absence of invoice data
              // We'll validate basic requirements here
-             return !!(formData.useCase && formData.portfolioSize); 
-        } else {
              // Multi Site: Needs CSV?
              // "allow the user to upload a CSV" -> Is it mandatory? 
              // "If the user selects the 'As a TPI' tab... allow upload CSV"
              // Let's assume mandatory for now or at least basic fields
-             return !!(formData.useCase && formData.portfolioSize);
+             return true;
         }
         
       case 4:
@@ -308,74 +315,101 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   const handleNext = async () => {
     if (!validateStep(currentStep)) return;
 
-    setIsSubmitting(true);
-    try {
-        // STEP 1: CREATE LEAD
-        if (currentStep === 1) {
-            console.log('Step 1 Complete: Creating Lead...');
-            const leadPayload = {
-                companyName: formData.companyName,
-                companyNumber: formData.companyNumber,
-                contactName: formData.contactName,
-                email: formData.email,
-                phone: formData.phone,
-                jobTitle: formData.jobTitle,
-                website: formData.website,
-                userType: formData.userType,
-                tpiIdentifier: formData.tpiIdentifier,
-                gdprConsent: formData.gdprConsent,
-                // Add file data if present (for TPI LOA)
-                fileContent: undefined as string | undefined, // Placeholder type assertion if needed
-                fileName: undefined as string | undefined
-            };
+    // STEP 1: CREATE LEAD (Non-blocking)
+    if (currentStep === 1) {
+        console.log('Step 1 Complete: Starting Lead Creation (Background)...');
+        
+        // Prepare payload immediately
+        const leadPayload = {
+            companyName: formData.companyName,
+            companyNumber: formData.companyNumber,
+            contactName: formData.contactName,
+            email: formData.email,
+            phone: formData.phone,
+            jobTitle: formData.jobTitle,
+            website: formData.website,
+            userType: formData.userType,
+            tpiIdentifier: formData.tpiIdentifier,
+            gdprConsent: formData.gdprConsent,
+            fileContent: undefined as string | undefined, 
+            fileName: undefined as string | undefined
+        };
 
-            if (formData.userType === 'tpi' && formData.letterOfAuthority) {
-                try {
-                    const fileText = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(formData.letterOfAuthority!);
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.onerror = reject;
-                    });
-                    // remove data prefix if needed, usually backend expects pure base64 or handles it?
-                    // server logic uses it directly for VersionData. VersionData usually expects base64. 
-                    // readAsDataURL returns "data:type/ext;base64,....."
-                    // We need to strip the prefix.
-                    leadPayload.fileContent = fileText.split(',')[1];
-                    leadPayload.fileName = formData.letterOfAuthority.name;
-                } catch (err) {
-                    console.error("Error reading LOA file:", err);
-                    alert("Failed to process the uploaded file. Please try again.");
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-            
-            const result = await salesforceService.createLead(leadPayload);
-            if (result.leadId) {
-                setFormData(prev => ({ ...prev, leadId: result.leadId }));
-                console.log('Lead created:', result.leadId);
-                
-                if (formData.userType === 'tpi') {
-                     // For TPIs, we stop here and show the success message
-                     // We cast to any or match the expected type roughly since we just need to trigger the view
-                     setSubmissionSuccess({ 
-                         instanceUrl: '', 
-                         accountId: '', 
-                         contactId: '', 
-                         opportunityId: '', // Not applicable for TPI
+        // Handle File Logic synchronously if possible, or inside the promise chain if complex
+        // Ideally we should process the file reading BEFORE starting the promise to keep the promise logic clean
+        // But for non-blocking UI, we can kick it off.
+        
+        const leadPromise = (async () => {
+             // File processing inside the async operation
+             if (formData.userType === 'tpi' && formData.letterOfAuthority) {
+                 try {
+                     const fileText = await new Promise<string>((resolve, reject) => {
+                         const reader = new FileReader();
+                         reader.readAsDataURL(formData.letterOfAuthority!);
+                         reader.onload = () => resolve(reader.result as string);
+                         reader.onerror = reject;
                      });
-                     setFinalSuccess(true);
-                } else {
-                     setCurrentStep((prev) => (prev + 1) as Step);
-                }
-            }
-        } 
-        // STEP 3: CONVERT LEAD & CREATE SITES
-        else if (currentStep === 3) {
-             console.log('Step 3 Complete: Identifying Sites & Opportunity...');
+                     leadPayload.fileContent = fileText.split(',')[1];
+                     leadPayload.fileName = formData.letterOfAuthority!.name;
+                 } catch (err) {
+                     console.error("Error reading LOA file:", err);
+                     throw new Error("Failed to process LOA file");
+                 }
+             }
+
+             console.log("Sending Lead Request...");
+             const result = await salesforceService.createLead(leadPayload);
+             console.log("Lead Request Complete:", result);
              
-             // Prepare payload for "Invoice" point which handles conversion + site creation
+             if (result.leadId) {
+                 setFormData(prev => ({ ...prev, leadId: result.leadId }));
+                 return result;
+             } else {
+                 throw new Error("Lead ID not returned");
+             }
+        })();
+
+        // Store the promise
+        promises.current.lead = leadPromise;
+
+        // Optimistic UI Update
+        if (formData.userType === 'tpi') {
+             // For TPI, we actually might want to wait? Or just show success?
+             // Prompt says "allow user to move on". 
+             // But TPI flow ends here. So we should probably show success immediately 
+             // AND handle potential failure? 
+             // Let's assume for TPI we show success immediately.
+             setFinalSuccess(true);
+             
+             // If it fails later, we can't easily "undo" the success screen without being jarring.
+             // We'll trust retries or extensive backend validation isn't needed for the UI switch.
+             // But we should catch errors.
+             leadPromise.catch(err => {
+                 console.error("Background Lead Creation Failed:", err);
+                 alert("There was an issue submitting your TPI application. Please contact support.");
+                 setFinalSuccess(false); // Revert?
+             });
+        } else {
+             setCurrentStep((prev) => (prev + 1) as Step);
+        }
+
+    } 
+    // STEP 3: CONVERT LEAD & CREATE SITES (Chained)
+    else if (currentStep === 3) {
+         console.log('Step 3 Complete: Identifying Sites & Opportunity (Background)...');
+         
+         // Start the chain
+         const opportunityPromise = (async () => {
+             // Wait for Lead to be created
+             if (!promises.current.lead) {
+                 throw new Error("Lead creation was not started.");
+             }
+             
+             const leadResult = await promises.current.lead;
+             const leadId = leadResult.leadId;
+             if (!leadId) throw new Error("No Lead ID available from previous step.");
+
+             // Prepare payload
              const conversionPayload: ParsedInvoiceData = {
                 // Base Details
                 companyName: formData.companyName,
@@ -386,15 +420,14 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 contactPhone: formData.phone,
                 
                 // Form Fields
-                leadId: formData.leadId,
+                leadId: leadId, // Use the resolved ID
                 industry: formData.industry,
                 companySize: formData.companySize,
-                useCase: formData.useCase,
-                portfolioSize: formData.portfolioSize,
+                // Removed fields
                 customerSegment: formData.customerSegment,
                 userType: formData.userType,
                 
-                 // Site Data (Manual or File)
+                 // Site Data
                 sites: invoiceData?.sites || [],
                 fileName: invoiceData?.fileName,
                 fileContent: invoiceData?.fileContent,
@@ -404,27 +437,26 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 annualConsumption: invoiceData?.annualConsumption,
              };
              
-             // If manual entry was used (and no invoice parsed), we might need to construct the 'sites' array manually from manualMeters
-             // ... [Existing Logic assumes invoiceData is populated or we rely on 'sites' matching logic]
-             // IMPORTANT: For simplicity, we assume invoiceData handles the structure, OR we build it here if manual.
-             
+             console.log("Sending Invoice/Opportunity Request...");
              const result = await salesforceService.createRecordsFromInvoice(conversionPayload);
+             console.log("Invoice/Opportunity Request Complete:", result);
+             
              if (result.success && result.records) {
                  setSubmissionSuccess(result.records);
-                 console.log('Stage 2 Complete (Opp Created):', result.records.opportunityId);
-                 setCurrentStep((prev) => (prev + 1) as Step);
+                 return result.records;
+             } else {
+                 throw new Error(result.message || "Failed to create opportunity records");
              }
-        }
-        // STEP 2: Just Next
-        else if (currentStep < 4) {
-             setCurrentStep((prev) => (prev + 1) as Step);
-        }
+         })();
 
-    } catch (error) {
-        console.error('Step Navigation Error:', error);
-        alert(`Error proceeding: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-        setIsSubmitting(false);
+         promises.current.opportunity = opportunityPromise;
+         
+         // Optimistic Update
+         setCurrentStep((prev) => (prev + 1) as Step);
+    }
+    // STEP 2: Just Next
+    else if (currentStep < 4) {
+         setCurrentStep((prev) => (prev + 1) as Step);
     }
   };
 
@@ -445,12 +477,21 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
     try {
       setIsSubmitting(true);
-      console.log('Final Submission: Updating Opportunity...');
-      
-      const opportunityId = submissionSuccess?.opportunityId;
-      if (!opportunityId) {
-          throw new Error("No Opportunity ID found. Please go back and retry Step 3.");
+      console.log('Final Submission: Waiting for previous requests...');
+
+      // Wait for Opportunity Creation to complete
+      if (!promises.current.opportunity) {
+          throw new Error("Application flow error: No opportunity creation in progress.");
       }
+
+      const oppResult = await promises.current.opportunity;
+      const opportunityId = oppResult.opportunityId;
+
+      if (!opportunityId) {
+          throw new Error("Failed to retrieve Opportunity ID.");
+      }
+      
+      console.log('Final Submission: Updating Opportunity...', opportunityId);
 
       const contractPayload = {
           contractLength: formData.contractLength,
@@ -462,29 +503,16 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
       
       if (result.success) {
         console.log('Final Success:', result.message);
-        // Trigger Success UI
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (onSuccess) {
             onSuccess();
         }
-        // Force a re-render or state update to show success screen? 
-        // Logic currently relies on `submissionSuccess` being set (which it is from Step 3).
-        // BUT `B2BForm` shows success screen if `success` state layout is triggered.
-        // Wait... the success screen logic in this component is:
-        // It relies on rendering `success` variable? No, let's check the render function.
-        // Usually it conditionally renders. I need to make sure I *keep* the form visible until THIS step is done.
-        // Ah, `onSuccess` callback hides the header in parent. 
-        // The render logic likely checks `submissionSuccess`. 
-        // Since `submissionSuccess` was set in Step 3, we don't want to show the success screen YET.
-        // We probably need a specialized boolean like `showFinalSuccess`.
-        
-        // TEMPORARY FIX: We set a flag or use local state to switch to success view ONLY NOW.
         setFinalSuccess(true); 
       }
 
     } catch (error) {
       console.error('Submission error:', error);
-      alert('There was an error submitting your request. Please try again.');
+      alert('There was an error submitting your request. Please try again. ' + (error instanceof Error ? error.message : ''));
     } finally {
       setIsSubmitting(false);
     }
@@ -1169,53 +1197,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 )}
 
                 {/* Common Requirements Fields */}
-                <div className="pt-8 border-t border-white/10">
-                    <h4 className={`text-lg font-bold mb-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Additional Requirements</h4>
-                    <div className="space-y-6">
-                        <div>
-                        <label htmlFor="useCase" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                            Primary Use Case *
-                        </label>
-                        <select
-                            id="useCase"
-                            name="useCase"
-                            required
-                            value={formData.useCase}
-                            onChange={handleChange}
-                            className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                        >
-                            <option value="">Select use case</option>
-                            <option value="billing">Billing & Collections</option>
-                            <option value="customer-engagement">Customer Engagement</option>
-                            <option value="finance">Finance & Accounting</option>
-                            <option value="operations">Operations Management</option>
-                            <option value="analytics">Analytics & Insights</option>
-                            <option value="integration">System Integration</option>
-                            <option value="other">Other</option>
-                        </select>
-                        </div>
 
-                        <div>
-                        <label htmlFor="portfolioSize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                            Estimated Annual Portfolio Size *
-                        </label>
-                        <select
-                            id="portfolioSize"
-                            name="portfolioSize"
-                            required
-                            value={formData.portfolioSize}
-                            onChange={handleChange}
-                            className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                        >
-                            <option value="">Select portfolio size</option>
-                            <option value="1-10000">1 - 10,000 Service Points</option>
-                            <option value="10000-100000">10,000 - 100,000 Service Points</option>
-                            <option value="100000-1000000">100,000 - 1,000,000 Service Points</option>
-                            <option value="1000000+">1,000,000+ Service Points</option>
-                        </select>
-                        </div>
-                    </div>
-                </div>
+
 
               </div>
             </div>

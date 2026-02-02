@@ -60,11 +60,11 @@ export interface ParsedInvoiceData {
     // Additional fields for full conversion
     leadId?: string;
     industry?: string;
+
     companySize?: string;
-    useCase?: string;
+    userType?: string;
     timeline?: string;
     budget?: string;
-    portfolioSize?: string;
     customerSegment?: string;
     contractLength?: string;
     contractStartDate?: string;
