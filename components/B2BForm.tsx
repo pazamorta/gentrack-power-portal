@@ -148,7 +148,9 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         // The prompt says "If the user selects the 'As a TPI' tab add... End customer info". 
         // I'll assume they go in Step 1 or a dedicated step. Let's put them in Step 1 if TPI is selected.
         if (formData.userType === 'tpi') {
-             return baseValid && !!(formData.endCustomerName && formData.endCustomerAddress && formData.endCustomerCompanyNumber && formData.letterOfAuthority);
+             // TPI requires standard fields + TPI Identifier + LOA
+             // Note: companyName/companyNumber serve as "Client Account Name" etc in TPI mode
+             return baseValid && !!(formData.tpiIdentifier && formData.letterOfAuthority);
         }
         
         return baseValid;
@@ -321,8 +323,33 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 website: formData.website,
                 userType: formData.userType,
                 tpiIdentifier: formData.tpiIdentifier,
-                gdprConsent: formData.gdprConsent
+                gdprConsent: formData.gdprConsent,
+                // Add file data if present (for TPI LOA)
+                fileContent: undefined as string | undefined, // Placeholder type assertion if needed
+                fileName: undefined as string | undefined
             };
+
+            if (formData.userType === 'tpi' && formData.letterOfAuthority) {
+                try {
+                    const fileText = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(formData.letterOfAuthority!);
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                    });
+                    // remove data prefix if needed, usually backend expects pure base64 or handles it?
+                    // server logic uses it directly for VersionData. VersionData usually expects base64. 
+                    // readAsDataURL returns "data:type/ext;base64,....."
+                    // We need to strip the prefix.
+                    leadPayload.fileContent = fileText.split(',')[1];
+                    leadPayload.fileName = formData.letterOfAuthority.name;
+                } catch (err) {
+                    console.error("Error reading LOA file:", err);
+                    alert("Failed to process the uploaded file. Please try again.");
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
             
             const result = await salesforceService.createLead(leadPayload);
             if (result.leadId) {
