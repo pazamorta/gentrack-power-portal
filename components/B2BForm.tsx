@@ -74,6 +74,48 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
       opportunity: null
   });
 
+  // Manual Entry State
+  const [searchPostcode, setSearchPostcode] = useState('');
+  const [addPostcode, setAddPostcode] = useState('');
+  const [foundSites, setFoundSites] = useState<{ id: string; name: string; address: string; postcode: string; selected: boolean }[]>([]);
+
+  const handlePostcodeSearch = (postcode: string, append: boolean) => {
+    if (!postcode) return;
+    
+    // Mock result generation
+    const newSites = [1, 2, 3].map(i => ({
+        id: `${postcode.replace(/\s/g, '')}-${i}-${Date.now()}`,
+        name: `Unit ${i}, Business Park`,
+        address: `London, UK`,
+        postcode: postcode,
+        selected: false
+    }));
+
+    if (append) {
+        setFoundSites(prev => [...prev, ...newSites]);
+        setAddPostcode('');
+    } else {
+        setFoundSites(newSites);
+    }
+  };
+
+  const toggleSiteSelection = (id: string) => {
+    setFoundSites(prev => prev.map(site => {
+        if (site.id === id) {
+            const newSelected = !site.selected;
+            const siteName = `${site.name}, ${site.postcode}`;
+            setFormData(fd => ({
+                ...fd,
+                manualMeters: newSelected 
+                    ? [...fd.manualMeters, siteName]
+                    : fd.manualMeters.filter(m => m !== siteName)
+            }));
+            return { ...site, selected: newSelected };
+        }
+        return site;
+    }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     // Handle checkbox separately
@@ -1087,25 +1129,51 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                                     <div>
                                         <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Postcode</label>
                                         <div className="flex gap-2">
-                                            <input type="text" placeholder="Enter Postcode" className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} />
-                                            <button type="button" className="px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold">Search</button>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Enter Postcode" 
+                                                value={searchPostcode}
+                                                onChange={(e) => setSearchPostcode(e.target.value)}
+                                                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} 
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handlePostcodeSearch(searchPostcode, false)}
+                                                className="px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold"
+                                            >
+                                                Search
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Mock Address Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className={`p-4 rounded-xl border cursor-pointer hover:border-[#00E599] transition-all ${theme === 'light' ? 'bg-white border-gray-200 shadow-sm' : 'bg-white/5 border-white/10'}`}>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <Building2 className="w-5 h-5 text-[#00E599]" />
-                                                <div className={`w-4 h-4 rounded-full border ${theme === 'light' ? 'border-gray-300' : 'border-white/30'}`}></div>
+                                {foundSites.length > 0 && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                        {foundSites.map((site) => (
+                                            <div 
+                                                key={site.id} 
+                                                onClick={() => toggleSiteSelection(site.id)}
+                                                className={`p-4 rounded-xl border cursor-pointer hover:border-[#00E599] transition-all relative ${
+                                                    site.selected 
+                                                        ? 'border-[#00E599] bg-[#00E599]/10' 
+                                                        : theme === 'light' ? 'bg-white border-gray-200 shadow-sm' : 'bg-white/5 border-white/10'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <Building2 className={`w-5 h-5 ${site.selected ? 'text-[#00E599]' : theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`} />
+                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                                        site.selected ? 'bg-[#00E599] border-[#00E599]' : theme === 'light' ? 'border-gray-300' : 'border-white/30'
+                                                    }`}>
+                                                        {site.selected && <Check size={10} className="text-black" />}
+                                                    </div>
+                                                </div>
+                                                <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{site.name}</p>
+                                                <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>{site.address}</p>
                                             </div>
-                                            <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Unit {i}, Business Park</p>
-                                            <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>London, UK</p>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {formData.manualMeters.length > 0 && (
                                      <div className="mt-4 flex flex-wrap gap-2">
@@ -1131,17 +1199,13 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                                             type="text" 
                                             id="newMeterInput"
                                             placeholder="Enter another Postcode" 
+                                            value={addPostcode}
+                                            onChange={(e) => setAddPostcode(e.target.value)}
                                             className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300' : 'bg-white/10 border-white/10 text-white'}`} 
                                         />
                                         <button 
                                             type="button" 
-                                            onClick={() => {
-                                                const input = document.getElementById('newMeterInput') as HTMLInputElement;
-                                                if (input && input.value) {
-                                                    setFormData(prev => ({ ...prev, manualMeters: [...prev.manualMeters, input.value] }));
-                                                    input.value = '';
-                                                }
-                                            }}
+                                            onClick={() => handlePostcodeSearch(addPostcode, true)}
                                             className="px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105"
                                         >
                                             Add
