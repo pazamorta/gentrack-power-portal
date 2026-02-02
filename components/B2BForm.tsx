@@ -355,7 +355,20 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             if (result.leadId) {
                 setFormData(prev => ({ ...prev, leadId: result.leadId }));
                 console.log('Lead created:', result.leadId);
-                setCurrentStep((prev) => (prev + 1) as Step);
+                
+                if (formData.userType === 'tpi') {
+                     // For TPIs, we stop here and show the success message
+                     // We cast to any or match the expected type roughly since we just need to trigger the view
+                     setSubmissionSuccess({ 
+                         instanceUrl: '', 
+                         accountId: '', 
+                         contactId: '', 
+                         opportunityId: '', // Not applicable for TPI
+                     });
+                     setFinalSuccess(true);
+                } else {
+                     setCurrentStep((prev) => (prev + 1) as Step);
+                }
             }
         } 
         // STEP 3: CONVERT LEAD & CREATE SITES
