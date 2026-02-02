@@ -549,7 +549,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           </div>
         )}
 
-        {/* Progress Indicator */}
+        {/* Progress Indicator - Hidden for TPI */}
+        {formData.userType !== 'tpi' && (
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
@@ -591,6 +592,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             ))}
           </div>
         </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-8 md:p-12 animate-fade-in">
           {/* Step 1: Company and Contact Information */}
