@@ -1130,13 +1130,129 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
               <div className="space-y-8">
                 
                 {/* Single Site Flow */}
-                {formData.singleSite && (
-                    <div className="space-y-6">
-                        {!showManualForm ? (
+                {/* Manual Entry Form (Shared Logic) */}
+                {showManualForm ? (
+                     <div className="space-y-6 animate-fade-in">
+                        <div className="flex items-center justify-between">
+                            <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                {formData.singleSite ? 'Manual Site Entry' : 'Add Sites Manually'}
+                            </h4>
+                            <button
+                                type="button"
+                                onClick={() => setShowManualForm(false)}
+                                className={`text-sm underline ${theme === 'light' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                Back to Upload
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Company Number</label>
+                                <input type="text" value={formData.companyNumber} readOnly className={`w-full px-4 py-3 rounded-xl opacity-75 ${theme === 'light' ? 'bg-gray-100 border border-gray-300 text-gray-900' : 'bg-white/5 border border-white/10 text-white'}`} />
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Postcode</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Enter Postcode" 
+                                        value={searchPostcode}
+                                        onChange={(e) => setSearchPostcode(e.target.value)}
+                                        disabled={isSearchingAddresses}
+                                        className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA] disabled:bg-gray-100' : 'bg-white/5 border border-white/10 text-white focus:border-white/30 disabled:opacity-50'}`} 
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handlePostcodeSearch(searchPostcode, false)}
+                                        disabled={isSearchingAddresses}
+                                        className={`px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isSearchingAddresses ? 'Searching...' : 'Search'}
+                                    </button>
+                                </div>
+                                {addressSearchError && (
+                                    <p className="text-red-500 text-sm mt-2">{addressSearchError}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Found Sites Cards */}
+                        {foundSites.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                {foundSites.map((site) => (
+                                    <div 
+                                        key={site.id} 
+                                        onClick={() => toggleSiteSelection(site.id)}
+                                        className={`p-4 rounded-xl border cursor-pointer hover:border-[#00E599] transition-all relative ${
+                                            site.selected 
+                                                ? 'border-[#00E599] bg-[#00E599]/10' 
+                                                : theme === 'light' ? 'bg-white border-gray-200 shadow-sm' : 'bg-white/5 border-white/10'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Building2 className={`w-5 h-5 ${site.selected ? 'text-[#00E599]' : theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`} />
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                                site.selected ? 'bg-[#00E599] border-[#00E599]' : theme === 'light' ? 'border-gray-300' : 'border-white/30'
+                                            }`}>
+                                                {site.selected && <Check size={10} className="text-black" />}
+                                            </div>
+                                        </div>
+                                        <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{site.name}</p>
+                                        <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>{site.address}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {formData.manualMeters.length > 0 && (
+                             <div className="mt-4 flex flex-wrap gap-2">
+                                {formData.manualMeters.map((meter, idx) => (
+                                    <div key={idx} className={`px-3 py-1 rounded-lg text-sm flex items-center gap-2 ${theme === 'light' ? 'bg-gray-100 text-gray-800' : 'bg-white/10 text-white'}`}>
+                                        <span>{meter}</span>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, manualMeters: prev.manualMeters.filter((_, i) => i !== idx) }))}
+                                            className="hover:text-red-500"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))}
+                             </div>
+                        )}
+
+                        <div className="p-4 rounded-xl border border-dashed border-white/20 bg-white/5 text-center">
+                            <p className={`text-sm mb-3 ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>Do you need to add more meters or is your meter not displayed?</p>
+                            <div className="flex gap-2 justify-center">
+                                <input 
+                                    type="text" 
+                                    id="newMeterInput"
+                                    placeholder="Enter another Postcode" 
+                                    value={addPostcode}
+                                    onChange={(e) => setAddPostcode(e.target.value)}
+                                    disabled={isSearchingAddresses}
+                                    className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300 disabled:bg-gray-100' : 'bg-white/10 border-white/10 text-white disabled:opacity-50'}`} 
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => handlePostcodeSearch(addPostcode, true)}
+                                    disabled={isSearchingAddresses}
+                                    className={`px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105 ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    {isSearchingAddresses ? '...' : 'Add'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    // Upload Views (Single or Portfolio)
+                    <>
+                        {formData.singleSite ? (
                             <div className="space-y-6">
                                 <InvoiceUploader 
                                     onDataParsed={handleInvoiceParsed} 
-                                    gdprConsent={true} // Already consented in step 1
+                                    gdprConsent={true} 
                                     onGdprChange={() => {}}
                                     onGdprError={() => {}}
                                     theme={theme}
@@ -1152,153 +1268,57 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-6 animate-fade-in">
-                                <h4 className={`text-lg font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Manual Site Entry</h4>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Company Number</label>
-                                        <input type="text" value={formData.companyNumber} readOnly className={`w-full px-4 py-3 rounded-xl opacity-75 ${theme === 'light' ? 'bg-gray-100 border border-gray-300 text-gray-900' : 'bg-white/5 border border-white/10 text-white'}`} />
-                                    </div>
-                                    <div>
-                                        <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>Postcode</label>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder="Enter Postcode" 
-                                                value={searchPostcode}
-                                                onChange={(e) => setSearchPostcode(e.target.value)}
-                                                disabled={isSearchingAddresses}
-                                                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA] disabled:bg-gray-100' : 'bg-white/5 border border-white/10 text-white focus:border-white/30 disabled:opacity-50'}`} 
-                                            />
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handlePostcodeSearch(searchPostcode, false)}
-                                                disabled={isSearchingAddresses}
-                                                className={`px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                {isSearchingAddresses ? 'Searching...' : 'Search'}
-                                            </button>
-                                        </div>
-                                        {addressSearchError && (
-                                            <p className="text-red-500 text-sm mt-2">{addressSearchError}</p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Mock Address Cards */}
-                                {foundSites.length > 0 && (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                        {foundSites.map((site) => (
-                                            <div 
-                                                key={site.id} 
-                                                onClick={() => toggleSiteSelection(site.id)}
-                                                className={`p-4 rounded-xl border cursor-pointer hover:border-[#00E599] transition-all relative ${
-                                                    site.selected 
-                                                        ? 'border-[#00E599] bg-[#00E599]/10' 
-                                                        : theme === 'light' ? 'bg-white border-gray-200 shadow-sm' : 'bg-white/5 border-white/10'
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <Building2 className={`w-5 h-5 ${site.selected ? 'text-[#00E599]' : theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`} />
-                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                                        site.selected ? 'bg-[#00E599] border-[#00E599]' : theme === 'light' ? 'border-gray-300' : 'border-white/30'
-                                                    }`}>
-                                                        {site.selected && <Check size={10} className="text-black" />}
-                                                    </div>
-                                                </div>
-                                                <p className={`text-sm font-medium ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{site.name}</p>
-                                                <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>{site.address}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {formData.manualMeters.length > 0 && (
-                                     <div className="mt-4 flex flex-wrap gap-2">
-                                        {formData.manualMeters.map((meter, idx) => (
-                                            <div key={idx} className={`px-3 py-1 rounded-lg text-sm flex items-center gap-2 ${theme === 'light' ? 'bg-gray-100 text-gray-800' : 'bg-white/10 text-white'}`}>
-                                                <span>{meter}</span>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => setFormData(prev => ({ ...prev, manualMeters: prev.manualMeters.filter((_, i) => i !== idx) }))}
-                                                    className="hover:text-red-500"
-                                                >
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        ))}
-                                     </div>
-                                )}
-
-                                <div className="p-4 rounded-xl border border-dashed border-white/20 bg-white/5 text-center">
-                                    <p className={`text-sm mb-3 ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>Do you need to add more meters or is your meter not displayed?</p>
-                                    <div className="flex gap-2 justify-center">
-                                        <input 
-                                            type="text" 
-                                            id="newMeterInput"
-                                            placeholder="Enter another Postcode" 
-                                            value={addPostcode}
-                                            onChange={(e) => setAddPostcode(e.target.value)}
-                                            disabled={isSearchingAddresses}
-                                            className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300 disabled:bg-gray-100' : 'bg-white/10 border-white/10 text-white disabled:opacity-50'}`} 
-                                        />
-                                        <button 
-                                            type="button" 
-                                            onClick={() => handlePostcodeSearch(addPostcode, true)}
-                                            disabled={isSearchingAddresses}
-                                            className={`px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105 ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            {isSearchingAddresses ? '...' : 'Add'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Multi Site / CSV Flow */}
-                {(!formData.singleSite) && (
-                     <div className={`rounded-xl p-6 border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
-                        <h4 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Upload Portfolio</h4>
-                        <p className={`text-sm mb-4 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
-                            Please upload a CSV file containing all your sites.
-                        </p>
-                        
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <button
-                            type="button"
-                            onClick={handleDownloadTemplate}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                            >
-                            Download Template
-                            </button>
-                            
-                            <div className="relative">
-                            <input
-                                type="file"
-                                accept=".csv"
-                                onChange={handleFileUpload}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            />
-                            <button
-                                type="button"
-                                className="w-full px-4 py-2 bg-[#00E599]/10 hover:bg-[#00E599]/20 text-[#00E599] border border-[#00E599]/50 rounded-lg text-sm font-medium transition-colors"
-                            >
-                                Upload CSV
-                            </button>
-                            </div>
-                        </div>
-                        
-                        {invoiceData?.sites && invoiceData.sites.length > 0 && (
-                            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                                <p className="text-green-400 text-sm">
-                                    Successfully loaded {invoiceData.sites.length} sites.
+                             <div className={`rounded-xl p-6 border ${theme === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-white/5 border-white/10'}`}>
+                                <h4 className={`text-lg font-medium mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>Upload Portfolio</h4>
+                                <p className={`text-sm mb-4 ${theme === 'light' ? 'text-gray-600' : 'text-secondary'}`}>
+                                    Please upload a CSV file containing all your sites.
                                 </p>
+                                
+                                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                                    <button
+                                    type="button"
+                                    onClick={handleDownloadTemplate}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                                    >
+                                    Download Template
+                                    </button>
+                                    
+                                    <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        onChange={handleFileUpload}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="w-full px-4 py-2 bg-[#00E599]/10 hover:bg-[#00E599]/20 text-[#00E599] border border-[#00E599]/50 rounded-lg text-sm font-medium transition-colors"
+                                    >
+                                        Upload CSV
+                                    </button>
+                                    </div>
+                                </div>
+
+                                <div className="text-center">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowManualForm(true)}
+                                        className={`text-sm underline transition-colors ${theme === 'light' ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        Enter details manually
+                                    </button>
+                                </div>
+                                
+                                {invoiceData?.sites && invoiceData.sites.length > 0 && (
+                                    <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                        <p className="text-green-400 text-sm">
+                                            Successfully loaded {invoiceData.sites.length} sites.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </div>
+                    </>
                 )}
 
                 {/* Common Requirements Fields */}
