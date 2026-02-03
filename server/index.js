@@ -792,6 +792,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     Name: propertyName,
                     GTCX_Account__c: accountId,
                     GTCX_Address__Street__s: street,
+                    GTCX_Address__City__s: site.city || '',
+                    GTCX_Address__CountryCode__s: site.country || 'GB',
                     GTCX_Address__PostalCode__s: postcode
                 });
 

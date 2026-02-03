@@ -49,7 +49,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     endCustomerAddress: '',
     endCustomerCompanyNumber: '',
     letterOfAuthority: null as File | null,
-    manualMeters: [] as { name: string; postcode: string; address: string }[],
+    manualMeters: [] as { name: string; postcode: string; address: string; city: string }[],
   });
   const [showManualForm, setShowManualForm] = useState(false);
   const [invoiceData, setInvoiceData] = useState<ParsedInvoiceData | null>(null);
@@ -77,7 +77,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   // Manual Entry State
   const [searchPostcode, setSearchPostcode] = useState('');
   const [addPostcode, setAddPostcode] = useState('');
-  const [foundSites, setFoundSites] = useState<{ id: string; name: string; address: string; postcode: string; selected: boolean }[]>([]);
+  const [foundSites, setFoundSites] = useState<{ id: string; name: string; address: string; city: string; postcode: string; selected: boolean }[]>([]);
   const [isSearchingAddresses, setIsSearchingAddresses] = useState(false);
   const [addressSearchError, setAddressSearchError] = useState<string | null>(null);
 
@@ -108,7 +108,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
              return {
                  id: addressObj.UPRN || `${postcode}-${Date.now()}-${Math.random()}`,
                  name: addressObj.ADDRESS || 'Unknown Address',
-                 address: addressObj.POST_TOWN || 'UK',
+                 address: addressObj.ADDRESS || 'Unknown Address', // Use full address for 'address' property used in display/street
+                 city: addressObj.POST_TOWN || 'UK',
                  postcode: addressObj.POSTCODE || postcode,
                  selected: false
              };
@@ -141,7 +142,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             setFormData(fd => ({
                 ...fd,
                 manualMeters: newSelected 
-                    ? [...fd.manualMeters, { name: siteName, postcode: site.postcode, address: site.name }]
+                    ? [...fd.manualMeters, { name: siteName, postcode: site.postcode, address: site.name, city: site.city }]
                     : fd.manualMeters.filter(m => m.name !== siteName)
             }));
             return { ...site, selected: newSelected };
@@ -509,6 +510,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                     ...(formData.manualMeters.map(site => ({
                         name: site.name,
                         address: site.address,
+                        city: site.city,
+                        country: 'GB',
                         postcode: site.postcode,
                         meterPoints: []
                     })))

@@ -8,6 +8,9 @@ export interface MeterPoint {
 export interface Site {
     name: string;
     address?: string;
+    postcode?: string;
+    city?: string; // Added for Salesforce Compound Field
+    country?: string; // Added for Salesforce Compound Field
     meterPoints: MeterPoint[];
 }
 
