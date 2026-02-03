@@ -551,46 +551,60 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      console.log('Final Submission: Waiting for previous requests...');
+    // 1. Immediate UI Feedback (Optimistic Success)
+    setIsSubmitting(true);
+    
+    // Scroll to top immediately
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (onSuccess) {
+        onSuccess();
+    }
+    setFinalSuccess(true);
+    setIsSubmitting(false); // Enable UI interaction if needed (though we switched view)
 
-      // Wait for Opportunity Creation to complete
+    // 2. Background Processing
+    try {
+      console.log('Final Submission: Processing in background...');
+
+      // Wait for Opportunity Creation to complete (should be fast/done)
       if (!promises.current.opportunity) {
-          throw new Error("Application flow error: No opportunity creation in progress.");
+          console.error("Background Error: No opportunity creation in progress.");
+          return;
       }
 
       const oppResult = await promises.current.opportunity;
       const opportunityId = oppResult.opportunityId;
 
       if (!opportunityId) {
-          throw new Error("Failed to retrieve Opportunity ID.");
+          console.error("Background Error: Failed to retrieve Opportunity ID.");
+          return;
       }
       
       console.log('Final Submission: Updating Opportunity...', opportunityId);
 
+      // Ensure strict boolean for Salesforce Checkbox
       const contractPayload = {
           contractLength: formData.contractLength,
           contractStartDate: formData.contractStartDate,
-          onsiteGeneration: formData.onsiteGeneration
+          onsiteGeneration: Boolean(formData.onsiteGeneration) 
       };
 
-      const result = await salesforceService.updateOpportunity(opportunityId, contractPayload);
-      
-      if (result.success) {
-        console.log('Final Success:', result.message);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (onSuccess) {
-            onSuccess();
-        }
-        setFinalSuccess(true); 
-      }
+      // Execute update (non-blocking for user)
+      salesforceService.updateOpportunity(opportunityId, contractPayload)
+        .then(result => {
+           if (result.success) {
+             console.log('Final Background Success:', result.message);
+           }
+        })
+        .catch(err => {
+           console.error('Background Submission API Error:', err);
+           // Optional: You could show a specialized toast here if it fails
+        });
 
     } catch (error) {
-      console.error('Submission error:', error);
-      alert('There was an error submitting your request. Please try again. ' + (error instanceof Error ? error.message : ''));
-    } finally {
-      setIsSubmitting(false);
+      console.error('Submission setup error:', error);
+      // We don't alert the user here because they are already on the success screen.
+      // We rely on logs for debugging this edge case.
     }
   };
 
