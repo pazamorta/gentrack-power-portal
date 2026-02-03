@@ -78,24 +78,58 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   const [searchPostcode, setSearchPostcode] = useState('');
   const [addPostcode, setAddPostcode] = useState('');
   const [foundSites, setFoundSites] = useState<{ id: string; name: string; address: string; postcode: string; selected: boolean }[]>([]);
+  const [isSearchingAddresses, setIsSearchingAddresses] = useState(false);
+  const [addressSearchError, setAddressSearchError] = useState<string | null>(null);
 
-  const handlePostcodeSearch = (postcode: string, append: boolean) => {
+  const handlePostcodeSearch = async (postcode: string, append: boolean) => {
     if (!postcode) return;
     
-    // Mock result generation
-    const newSites = [1, 2, 3].map(i => ({
-        id: `${postcode.replace(/\s/g, '')}-${i}-${Date.now()}`,
-        name: `Unit ${i}, Business Park`,
-        address: `London, UK`,
-        postcode: postcode,
-        selected: false
-    }));
+    setIsSearchingAddresses(true);
+    setAddressSearchError(null);
 
-    if (append) {
-        setFoundSites(prev => [...prev, ...newSites]);
-        setAddPostcode('');
-    } else {
-        setFoundSites(newSites);
+    try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_URL}/api/address/lookup?postcode=${encodeURIComponent(postcode)}`);
+        
+        if (!response.ok) {
+             throw new Error('Failed to fetch addresses');
+        }
+
+        const data = await response.json();
+        
+        if (!data.results || data.results.length === 0) {
+             setAddressSearchError('No addresses found for this postcode');
+             if (!append) setFoundSites([]);
+             return;
+        }
+
+        const newSites = data.results.map((item: any) => {
+             const addressObj = item.DPA || item.LPI;
+             return {
+                 id: addressObj.UPRN || `${postcode}-${Date.now()}-${Math.random()}`,
+                 name: addressObj.ADDRESS || 'Unknown Address',
+                 address: addressObj.POST_TOWN || 'UK',
+                 postcode: addressObj.POSTCODE || postcode,
+                 selected: false
+             };
+        });
+
+        if (append) {
+            setFoundSites(prev => {
+                const existingIds = new Set(prev.map(s => s.id));
+                const uniqueNewSites = newSites.filter((s:any) => !existingIds.has(s.id));
+                return [...prev, ...uniqueNewSites];
+            });
+            setAddPostcode('');
+        } else {
+            setFoundSites(newSites);
+        }
+
+    } catch (err) {
+        console.error('Address search error:', err);
+        setAddressSearchError('Error searching for addresses. Please try again.');
+    } finally {
+        setIsSearchingAddresses(false);
     }
   };
 
@@ -1134,16 +1168,21 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                                                 placeholder="Enter Postcode" 
                                                 value={searchPostcode}
                                                 onChange={(e) => setSearchPostcode(e.target.value)}
-                                                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`} 
+                                                disabled={isSearchingAddresses}
+                                                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA] disabled:bg-gray-100' : 'bg-white/5 border border-white/10 text-white focus:border-white/30 disabled:opacity-50'}`} 
                                             />
                                             <button 
                                                 type="button" 
                                                 onClick={() => handlePostcodeSearch(searchPostcode, false)}
-                                                className="px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold"
+                                                disabled={isSearchingAddresses}
+                                                className={`px-4 py-2 bg-[#00E599] text-black rounded-xl font-bold ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                Search
+                                                {isSearchingAddresses ? 'Searching...' : 'Search'}
                                             </button>
                                         </div>
+                                        {addressSearchError && (
+                                            <p className="text-red-500 text-sm mt-2">{addressSearchError}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1201,14 +1240,16 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                                             placeholder="Enter another Postcode" 
                                             value={addPostcode}
                                             onChange={(e) => setAddPostcode(e.target.value)}
-                                            className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300' : 'bg-white/10 border-white/10 text-white'}`} 
+                                            disabled={isSearchingAddresses}
+                                            className={`px-4 py-2 rounded-lg text-sm w-48 ${theme === 'light' ? 'bg-white border border-gray-300 disabled:bg-gray-100' : 'bg-white/10 border-white/10 text-white disabled:opacity-50'}`} 
                                         />
                                         <button 
                                             type="button" 
                                             onClick={() => handlePostcodeSearch(addPostcode, true)}
-                                            className="px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105"
+                                            disabled={isSearchingAddresses}
+                                            className={`px-4 py-2 bg-[#3ACDFA] text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-[#3ACDFA]/20 transition-all hover:scale-105 ${isSearchingAddresses ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
-                                            Add
+                                            {isSearchingAddresses ? '...' : 'Add'}
                                         </button>
                                     </div>
                                 </div>

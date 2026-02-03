@@ -965,6 +965,40 @@ app.use((err, req, res, next) => {
     });
 });
 
+// OS Places API Proxy
+app.get('/api/address/lookup', async (req, res) => {
+    try {
+        const { postcode } = req.query;
+        if (!postcode) {
+            return res.status(400).json({ error: 'Postcode is required' });
+        }
+
+        const apiKey = process.env.OS_API_KEY || process.env.ORDNANCE_SURVEY_API_KEY || process.env.OS_PROJECT_API_KEY;
+        if (!apiKey) {
+            console.error('❌ OS_API_KEY is missing');
+            return res.status(500).json({ error: 'Server configuration error: Missing OS API Key' });
+        }
+
+        const osUrl = `https://api.os.uk/search/places/v1/postcode?postcode=${encodeURIComponent(postcode)}&key=${apiKey}`;
+        console.log(`🗺️  OS Places Lookup: ${postcode}`);
+
+        const response = await fetch(osUrl);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ OS API Error:', response.status, errorText);
+            return res.status(response.status).json({ error: 'Failed to fetch addresses from OS API' });
+        }
+
+        const data = await response.json();
+        res.json(data);
+
+    } catch (error) {
+        console.error('❌ Address Lookup Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // AI Proxy Endpoint
 app.post('/api/ai/generate', async (req, res) => {
     try {
