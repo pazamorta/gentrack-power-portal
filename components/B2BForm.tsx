@@ -267,10 +267,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         
       case 4:
          // Step 4: Contract Details
-         // Optional: Contract Length, Date, Generation? Or Required?
-         // Prompt doesn't explicitly say required, but usually is. Let's make at least Contract Length required if they are in this flow.
-         // Actually, let's keep it flexible but safe.
-         return true; // For now accept empty
+         // Require at least Contract Length and Start Date as implicit in user complaint
+         return !!(formData.contractLength && formData.contractStartDate);
 
       default:
         return false;
