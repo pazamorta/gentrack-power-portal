@@ -710,8 +710,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         const opportunityFields = {
             StageName: stageName,
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
-            CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            Description: `Generated from Web Form.\nUse Case: ${data.useCase}\nTimeline: ${data.timeline}\nBudget: ${data.budget}\nPortfolio Size: ${data.portfolioSize}\n`
+            CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         };
 
         if (oppRecordTypeId) {
