@@ -503,8 +503,16 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 customerSegment: formData.customerSegment,
                 userType: formData.userType,
                 
-                 // Site Data
-                sites: invoiceData?.sites || [],
+                // Site Data
+                sites: [
+                    ...(invoiceData?.sites || []),
+                    ...(formData.manualMeters.map(postcode => ({
+                        name: `Site ${postcode}`,
+                        address: postcode,
+                        postcode: postcode,
+                        meterPoints: []
+                    })))
+                ],
                 fileName: invoiceData?.fileName,
                 fileContent: invoiceData?.fileContent,
                 invoiceNumber: invoiceData?.invoiceNumber,

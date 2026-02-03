@@ -787,18 +787,28 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 const propertyName = `${data.companyName} ${postcode}`.trim() || `Property ${site.name}`;
 
                 // Create GTCX_Property__c
-                // Assumes Custom Address Field: GTCX_Address__c (Components: GTCX_Address__Street__s, GTCX_Address__PostalCode__s)
+                // Create GTCX_Property__c record (linked to Account only)
                 const propertyResult = await createRecord('GTCX_Property__c', {
                     Name: propertyName,
                     GTCX_Account__c: accountId,
                     GTCX_Address__Street__s: street,
                     GTCX_Address__PostalCode__s: postcode
-                    // GTCX_Address__City__s? Country? State? - Leaving blank as not provided
                 });
 
                 if (propertyResult.success) {
                     const propertyId = propertyResult.id;
                     createdProperties.push({ id: propertyId, name: propertyName });
+
+                    // Create Association Record (Property <-> Opportunity)
+                    try {
+                        await createRecord('GTCX_Property_Opp_Association__c', {
+                            GTCX_Property__c: propertyId,
+                            GTCX_Opportunity__c: opportunityId
+                        });
+                        console.log(`   Linked Property ${propertyId} to Opportunity via Association`);
+                    } catch (assocErr) {
+                         console.error('   Failed to create Property Association:', assocErr);
+                    }
 
                     if (site.meterPoints && site.meterPoints.length > 0) {
                         for (const meterPoint of site.meterPoints) {
