@@ -49,7 +49,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     endCustomerAddress: '',
     endCustomerCompanyNumber: '',
     letterOfAuthority: null as File | null,
-    manualMeters: [] as string[],
+    manualMeters: [] as { name: string; postcode: string; address: string }[],
   });
   const [showManualForm, setShowManualForm] = useState(false);
   const [invoiceData, setInvoiceData] = useState<ParsedInvoiceData | null>(null);
@@ -141,8 +141,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             setFormData(fd => ({
                 ...fd,
                 manualMeters: newSelected 
-                    ? [...fd.manualMeters, siteName]
-                    : fd.manualMeters.filter(m => m !== siteName)
+                    ? [...fd.manualMeters, { name: siteName, postcode: site.postcode, address: site.name }]
+                    : fd.manualMeters.filter(m => m.name !== siteName)
             }));
             return { ...site, selected: newSelected };
         }
@@ -506,10 +506,10 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 // Site Data
                 sites: [
                     ...(invoiceData?.sites || []),
-                    ...(formData.manualMeters.map(postcode => ({
-                        name: `Site ${postcode}`,
-                        address: postcode,
-                        postcode: postcode,
+                    ...(formData.manualMeters.map(site => ({
+                        name: site.name,
+                        address: site.address,
+                        postcode: site.postcode,
                         meterPoints: []
                     })))
                 ],
@@ -1231,10 +1231,22 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                              <div className="mt-4 flex flex-wrap gap-2">
                                 {formData.manualMeters.map((meter, idx) => (
                                     <div key={idx} className={`px-3 py-1 rounded-lg text-sm flex items-center gap-2 ${theme === 'light' ? 'bg-gray-100 text-gray-800' : 'bg-white/10 text-white'}`}>
-                                        <span>{meter}</span>
+                                        <span>{meter.name}</span>
                                         <button 
                                             type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, manualMeters: prev.manualMeters.filter((_, i) => i !== idx) }))}
+                                            onClick={() => {
+                                                setFormData(prev => ({ 
+                                                    ...prev, 
+                                                    manualMeters: prev.manualMeters.filter((_, i) => i !== idx) 
+                                                }));
+                                                // Also unselect from foundSites if present
+                                                setFoundSites(prev => prev.map(s => {
+                                                   if (`${s.name}, ${s.postcode}` === meter.name) {
+                                                       return { ...s, selected: false };
+                                                   }
+                                                   return s;
+                                                }));
+                                            }}
                                             className="hover:text-red-500"
                                         >
                                             &times;
