@@ -254,16 +254,12 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
       case 3:
         if (formData.singleSite) {
              // Single Site: Needs Bill or Manual Entry
-             // If Manual: needs postcode?
-             // "If they select not to upload the form then we display... Company Number, Company Postcode"
-             // Currently manual entry is triggered by showManualForm state or absence of invoice data
-             // We'll validate basic requirements here
-             // Multi Site: Needs CSV?
-             // "allow the user to upload a CSV" -> Is it mandatory? 
-             // "If the user selects the 'As a TPI' tab... allow upload CSV"
-             // Let's assume mandatory for now or at least basic fields
              return true;
         }
+        
+        // Multi Site (Portfolio):
+        // Allow progression if they are on this step
+        return true;
         
       case 4:
          // Step 4: Contract Details
