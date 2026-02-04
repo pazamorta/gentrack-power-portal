@@ -316,6 +316,95 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // SIMULATION: Good Energy Invoice Detection
+    // If the file name contains "Good" or "Good Energy", we simulate the parsing
+    if (file.name.toLowerCase().includes('good') || file.name.includes('1770211092461')) { // Including the specific uploaded file ID just in case
+        console.log("Simulating Good Energy Invoice Parsing...");
+        
+        // Mock Data based on the user request
+        const mockInvoiceData: ParsedInvoiceData = {
+             companyName: 'CX Team', // Updated as per user request
+             companyNumber: '1234S6789', // Updated Account Number
+             accountNumber: '1234S6789',
+             invoiceNumber: 'INV-2024-001',
+             totalAmount: 145000, // Sum of pricing totals: 40k+35k+50k+20k = 145k
+             totalConsumption: 1450, // 1,450 MWh
+             annualConsumption: 12000, // 12,000 MWh YTD
+             sites: [
+                 {
+                     name: 'Site 1: London HQ',
+                     address: 'London, E14',
+                     postcode: 'E14',
+                     city: 'London',
+                     country: 'GB',
+                     meterPoints: [{
+                         mpan: '1012131415',
+                         meterNumber: '1012131415',
+                         address: 'London, E14' // Minimal address from image
+                     }]
+                 },
+                 {
+                     name: 'Site 2: Manchester Hub',
+                     address: 'Manchester, M1',
+                     postcode: 'M1',
+                     city: 'Manchester',
+                     country: 'GB',
+                     meterPoints: [{
+                         mpan: '1617181920',
+                         meterNumber: '1617181920',
+                         address: 'Manchester, M1'
+                     }]
+                 },
+                 {
+                     name: 'Site 3: Birmingham Data Centre',
+                     address: 'Birmingham, B1',
+                     postcode: 'B1',
+                     city: 'Birmingham',
+                     country: 'GB',
+                     meterPoints: [{
+                         mpan: '2122233425',
+                         meterNumber: '2122233425',
+                         address: 'Birmingham, B1'
+                     }]
+                 },
+                 {
+                     name: 'Site 4: Edinburgh Office',
+                     address: 'Edinburgh, EH1',
+                     postcode: 'EH1',
+                     city: 'Edinburgh',
+                     country: 'GB',
+                     meterPoints: [{
+                         mpan: '2627282930',
+                         meterNumber: '2627282930',
+                         address: 'Edinburgh, EH1'
+                     }]
+                 }
+             ]
+        };
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          mockInvoiceData.fileContent = base64;
+          mockInvoiceData.fileName = file.name;
+          
+          handleInvoiceParsed(mockInvoiceData);
+          
+          // Pre-fill form data with extracted basics
+          setFormData(prev => ({
+              ...prev,
+              companyName: mockInvoiceData.companyName,
+              companyNumber: mockInvoiceData.companyNumber || prev.companyNumber,
+              // Auto-set multi-site if > 1 site
+              singleSite: mockInvoiceData.sites.length === 1,
+              // Assume I&C if consumption is high (12,000 MWh is definitely I&C)
+              spendUnder30k: false
+          }));
+        };
+        return;
+    }
+
     const text = await file.text();
     const rows = text.split('\n').map(row => row.split(','));
     const headers = rows[0].map(h => h.trim());
