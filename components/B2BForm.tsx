@@ -246,10 +246,9 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         
         // If SME (spend < 30k), must answer microbusiness questions
         if (formData.spendUnder30k) {
-            if (formData.employeesOver10 === null || formData.balanceSheetOver2m === null) return false;
         }
         
-        return !!(formData.industry && formData.companySize);
+        return !!formData.industry;
 
       case 3:
         if (formData.singleSite) {
@@ -318,7 +317,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
     // SIMULATION: Good Energy Invoice Detection
     // If the file name contains "Good" or "Good Energy", we simulate the parsing
-    if (file.name.toLowerCase().includes('good') || file.name.includes('1770211092461')) { // Including the specific uploaded file ID just in case
+    if (file.name.toLowerCase().includes('good') || file.name.includes('1770211092461') || file.name.includes('1770211866247') || file.name.includes('1770213108076')) { // Using multiple IDs for robustness
         console.log("Simulating Good Energy Invoice Parsing...");
         
         // Mock Data based on the user request
@@ -389,18 +388,79 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           mockInvoiceData.fileContent = base64;
           mockInvoiceData.fileName = file.name;
           
-          handleInvoiceParsed(mockInvoiceData);
-          
-          // Pre-fill form data with extracted basics
+
+          // Instead of just parsing, we simulate the full "Next" flow for this demo
+          // 1. Update basic state
+          setInvoiceData(mockInvoiceData);
           setFormData(prev => ({
               ...prev,
               companyName: mockInvoiceData.companyName,
               companyNumber: mockInvoiceData.companyNumber || prev.companyNumber,
-              // Auto-set multi-site if > 1 site
               singleSite: mockInvoiceData.sites.length === 1,
-              // Assume I&C if consumption is high (12,000 MWh is definitely I&C)
               spendUnder30k: false
           }));
+
+          // 2. TRIGGER BACKGROUND RECORD CREATION (Same as Step 3 handleNext)
+          console.log('Simulation: Triggering Background Record Creation...');
+          
+          const opportunityPromise = (async () => {
+             // Wait for Lead to be created (Mock flow assumes Step 1 passed)
+             if (!promises.current.lead) {
+                 console.warn("Simulation: No lead promise found. Assuming dev mode or direct jump.");
+                 // In a real scenario, we'd ensure lead exists. For this mock, if no lead, we might fail or need a fallback.
+                 // let's try to get it, or if missing, maybe just proceed (validation might fail on backend but UI moves on)
+             }
+             
+             let leadId = '';
+             try {
+                 const leadResult = await promises.current.lead;
+                 leadId = leadResult?.leadId || '';
+             } catch (e) {
+                 console.warn("Simulation: Could not get Lead ID", e);
+             }
+
+             // Prepare payload
+             const conversionPayload: ParsedInvoiceData = {
+                // Base Details
+                companyName: mockInvoiceData.companyName, // Use mock data
+                companyNumber: mockInvoiceData.companyNumber || formData.companyNumber,
+                contactFirstName: formData.contactName.split(' ')[0],
+                contactLastName: formData.contactName.split(' ').slice(1).join(' ') || 'Unknown',
+                contactEmail: formData.email,
+                contactPhone: formData.phone,
+                
+                // Form Fields
+                leadId: leadId, 
+                industry: formData.industry,
+                // companySize removed
+                userType: formData.userType,
+                
+                // Site Data
+                sites: mockInvoiceData.sites, // Use mock sites
+                fileName: mockInvoiceData.fileName,
+                fileContent: mockInvoiceData.fileContent,
+                invoiceNumber: mockInvoiceData.invoiceNumber,
+                totalAmount: mockInvoiceData.totalAmount,
+                totalConsumption: mockInvoiceData.totalConsumption,
+                annualConsumption: mockInvoiceData.annualConsumption,
+             };
+             
+             console.log("Simulation: Sending Invoice/Opportunity Request...");
+             const result = await salesforceService.createRecordsFromInvoice(conversionPayload);
+             console.log("Simulation: Invoice/Opportunity Request Complete:", result);
+             
+             if (result.success && result.records) {
+                 setSubmissionSuccess(result.records);
+                 return result.records;
+             } else {
+                 throw new Error(result.message || "Failed to create opportunity records");
+             }
+          })();
+
+          promises.current.opportunity = opportunityPromise;
+
+          // 3. Auto-Advance to Step 4
+          setCurrentStep(4);
         };
         return;
     }
@@ -582,7 +642,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 // Form Fields
                 leadId: leadId, // Use the resolved ID
                 industry: formData.industry,
-                companySize: formData.companySize,
+                // companySize removed
                 // Removed fields
                 customerSegment: formData.customerSegment,
                 userType: formData.userType,
@@ -1168,26 +1228,6 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                       <option value="Communication Services">Communication Services</option>
                       <option value="Real Estate">Real Estate</option>
                       <option value="Utilities">Utilities</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="companySize" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                      Company Size *
-                    </label>
-                    <select
-                      id="companySize"
-                      name="companySize"
-                      required
-                      value={formData.companySize}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl focus:outline-none transition-colors ${theme === 'light' ? 'bg-white border border-gray-300 text-gray-900 focus:border-[#3ACDFA]' : 'bg-white/5 border border-white/10 text-white focus:border-white/30'}`}
-                    >
-                      <option value="">Select size</option>
-                      <option value="1-50">1-50 employees</option>
-                      <option value="51-200">51-200 employees</option>
-                      <option value="201-500">201-500 employees</option>
-                      <option value="501-1000">501-1000 employees</option>
-                      <option value="1000+">1000+ employees</option>
                     </select>
                   </div>
                 </div>
