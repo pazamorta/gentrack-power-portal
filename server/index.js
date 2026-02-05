@@ -531,9 +531,20 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         let stageName = (data.sites && data.sites.length > 0) ? 'Qualification' : 'Prospecting';
 
         // Helper to get converted status
+        // Helper to get converted status
         const getConvertedStatus = async () => {
-            const statusResult = await query("SELECT MasterLabel FROM LeadStatus WHERE IsConverted=true LIMIT 1");
-            return statusResult.records[0]?.MasterLabel || 'Closed - Converted';
+            // "Converted" seems to be invalid for the specific Lead Process / Record Type in some envs
+            // We try to find another one, e.g. "Qualified" or "Approved"
+            try {
+                const statusResult = await query("SELECT MasterLabel FROM LeadStatus WHERE IsConverted=true AND MasterLabel != 'Converted' LIMIT 1");
+                if (statusResult.records && statusResult.records.length > 0) {
+                    return statusResult.records[0].MasterLabel;
+                }
+            } catch (e) {
+                console.warn("Could not query specific converted status, falling back.");
+            }
+            // Fallback to "Qualified" if "Converted" is failing
+            return 'Qualified';
         };
 
         // 1. LEAD CONVERSION FLOW

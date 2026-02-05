@@ -764,7 +764,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   // ... [Keep steps array definition]
 
-  if (finalSuccess && submissionSuccess) {
+  if (finalSuccess && (submissionSuccess || formData.userType === 'tpi')) {
       return (
         <div className={`w-full max-w-4xl mx-auto p-8 backdrop-blur-lg rounded-2xl border text-center animate-fade-in ${
             theme === 'light' 
@@ -1606,7 +1606,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                   icon={false}
                 >
                   <div className="flex items-center flex-nowrap whitespace-nowrap">
-                    <span className="mr-2">Next</span>
+                    <span className="mr-2">{formData.userType === 'tpi' ? 'Submit' : 'Next'}</span>
                     <ChevronRight className="w-5 h-5 flex-shrink-0" />
                   </div>
                 </Button>
