@@ -1604,12 +1604,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           )}
 
           {/* Validation Error Message */}
-          {validationError && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 animate-slide-up">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <p className="text-sm font-medium">{validationError}</p>
-            </div>
-          )}
+
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
