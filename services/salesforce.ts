@@ -72,6 +72,7 @@ export interface ParsedInvoiceData {
     contractLength?: string;
     contractStartDate?: string;
     onsiteGeneration?: boolean;
+    recordTypeId?: string;
     
     // Savings analysis
     currentRate?: number; // £/MWh

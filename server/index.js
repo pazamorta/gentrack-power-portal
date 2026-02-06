@@ -715,13 +715,17 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         const estimatedAnnualConsumption = data.annualConsumption || (data.totalConsumption ? data.totalConsumption * 12 : 0);
         const opportunityAmount = estimatedAnnualConsumption * 80;
 
-        // Fetch RecordTypeId for Regulated_Electricity
-        const oppRecordTypeId = await getRecordTypeId('Opportunity', 'Regulated_Electricity');
+        // Fetch RecordTypeId - Priority: 1. Provided by Frontend (data.recordTypeId), 2. Default 'Regulated_Electricity'
+        let oppRecordTypeId = data.recordTypeId;
+        if (!oppRecordTypeId) {
+            oppRecordTypeId = await getRecordTypeId('Opportunity', 'Regulated_Electricity');
+        }
 
         const opportunityFields = {
             StageName: stageName,
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
-            CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            GTCX_Customer_Segment__c: data.customerSegment
         };
 
         if (oppRecordTypeId) {
