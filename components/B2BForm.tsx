@@ -266,6 +266,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         
         // If SME (spend < 30k), must answer microbusiness questions
         if (formData.spendUnder30k) {
+             if (formData.employeesOver10 === null || formData.balanceSheetOver2m === null) return false;
         }
         
         return !!formData.industry;
@@ -282,8 +283,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         
       case 4:
          // Step 4: Contract Details
-         // Require at least Contract Length and Start Date as implicit in user complaint
-         return true;
+         // Require Contract Length, Start Date, and Onsite Generation
+         return !!(formData.contractLength && formData.contractStartDate && formData.onsiteGeneration !== null);
 
       default:
         return false;
@@ -720,6 +721,14 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent premature submission if not on final step
+    // This catches "Enter" key presses on inputs in earlier steps
+    if (currentStep < 4) {
+        handleNext();
+        return;
+    }
+
     setValidationError(null);
     
     if (!validateStep(4)) {
