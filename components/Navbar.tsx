@@ -101,11 +101,9 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <Link to="/login">
-          <Link to="/login" className="inline-flex items-center justify-center gap-[10px] px-[40px] py-[16px] bg-[#1D2130] rounded-[32px] text-white font-['Roboto'] text-sm hover:opacity-90 transition-opacity">
+          <a href="https://gtk-emea--gtcx.sandbox.my.site.com/CustomerENGPortal/s/login/?cb=20260226-4" className="inline-flex items-center justify-center gap-[10px] px-[40px] py-[16px] bg-[#1D2130] rounded-[32px] text-white font-['Roboto'] text-sm hover:opacity-90 transition-opacity">
             Customer Login
-          </Link>
-          </Link>
+          </a>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -153,9 +151,9 @@ export const Navbar: React.FC = () => {
             )
           ))}
           <div className="h-px bg-white/10 my-2"></div>
-          <Link to="/login">
+          <a href="https://gtk-emea--gtcx.sandbox.my.site.com/CustomerENGPortal/s/login/?cb=20260226-4" className="w-full">
             <Button variant="primary" className="w-full justify-center">Customer Login</Button>
-          </Link>
+          </a>
         </div>
       )}
     </nav>
