@@ -741,10 +741,10 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     
     // Scroll to top immediately
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setFinalSuccess(true);
     if (onSuccess) {
         onSuccess();
     }
-    setFinalSuccess(true);
     setIsSubmitting(false); // Enable UI interaction if needed (though we switched view)
 
     // 2. Background Processing
@@ -795,42 +795,6 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   // ... [Keep steps array definition]
 
-  if (finalSuccess) {
-      return (
-        <div className={`w-full max-w-4xl mx-auto p-8 backdrop-blur-lg rounded-2xl border text-center animate-fade-in ${
-            theme === 'light' 
-            ? 'bg-white border-gray-200 shadow-xl' 
-            : 'bg-white/5 border-white/10'
-        }`}>
-            <div className="mb-6 flex justify-center">
-                <div className="w-20 h-20 bg-[#00E599]/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-10 h-10 text-[#00E599]" />
-                </div>
-            </div>
-            
-            <h2 className={`text-3xl font-display font-bold mb-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
-                Application Submitted!
-            </h2>
-            <p className={`text-xl md:text-2xl mb-8 max-w-2xl mx-auto ${theme === 'light' ? 'text-gray-700' : 'text-white'}`}>
-                Thanks for trusting Oxygen with your company's energy needs. We will get back to you very soon.
-            </p>
-
-            <div className="mt-12">
-                <button 
-                    onClick={() => window.location.reload()}
-                    className={`px-6 py-3 rounded-lg transition-colors border ${
-                        theme === 'light'
-                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300'
-                        : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
-                    }`}
-                >
-                    Submit Another Application
-                </button>
-            </div>
-        </div>
-      );
-  }
-
   const steps = [
     { number: 1, title: 'Company & Contact', description: 'Basic information' },
     { number: 2, title: 'Business Details', description: 'About your business' },
@@ -838,7 +802,39 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     { number: 4, title: 'Contract', description: 'Current agreements' },
   ];
 
-  const content = (
+  const content = finalSuccess ? (
+    <div className={`w-full max-w-4xl mx-auto p-8 backdrop-blur-lg rounded-2xl border text-center animate-fade-in ${
+        theme === 'light' 
+        ? 'bg-white border-gray-200 shadow-xl' 
+        : 'bg-white/5 border-white/10'
+    }`}>
+        <div className="mb-6 flex justify-center">
+            <div className="w-20 h-20 bg-[#00E599]/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-[#00E599]" />
+            </div>
+        </div>
+        
+        <h2 className={`text-3xl font-display font-bold mb-4 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+            Application Submitted!
+        </h2>
+        <p className={`text-xl md:text-2xl mb-8 max-w-2xl mx-auto ${theme === 'light' ? 'text-gray-700' : 'text-white'}`}>
+            Thanks for trusting Oxygen with your company's energy needs. We will get back to you very soon.
+        </p>
+
+        <div className="mt-12">
+            <button 
+                onClick={() => window.location.reload()}
+                className={`px-6 py-3 rounded-lg transition-colors border ${
+                    theme === 'light'
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300'
+                    : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
+                }`}
+            >
+                Submit Another Application
+            </button>
+        </div>
+    </div>
+  ) : (
     <>
       <div className="max-w-4xl mx-auto">
         {variant !== 'embedded' && (
@@ -1614,8 +1610,8 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 variant="outline"
                 onClick={handlePrevious}
                 className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'} flex flex-row items-center justify-center whitespace-nowrap`}
+                icon={false}
               >
-                <ChevronLeft className="w-5 h-5 mr-2 flex-shrink-0" />
                 <span>Previous</span>
               </Button>
             ) : (
