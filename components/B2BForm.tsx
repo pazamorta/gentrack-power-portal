@@ -455,6 +455,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 industry: formData.industry,
                 // companySize removed
                 userType: formData.userType,
+                tpiIdentifier: formData.tpiIdentifier,
                 
                 // Site Data
                 sites: mockInvoiceData.sites, // Use mock sites
@@ -615,25 +616,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
         promises.current.lead = leadPromise;
 
         // Optimistic UI Update
-        if (formData.userType === 'tpi') {
-             // For TPI, we actually might want to wait? Or just show success?
-             // Prompt says "allow user to move on". 
-             // But TPI flow ends here. So we should probably show success immediately 
-             // AND handle potential failure? 
-             // Let's assume for TPI we show success immediately.
-             setFinalSuccess(true);
-             
-             // If it fails later, we can't easily "undo" the success screen without being jarring.
-             // We'll trust retries or extensive backend validation isn't needed for the UI switch.
-             // But we should catch errors.
-             leadPromise.catch(err => {
-                 console.error("Background Lead Creation Failed:", err);
-                 alert("There was an issue submitting your TPI application. Please contact support.");
-                 setFinalSuccess(false); // Revert?
-             });
-        } else {
-             setCurrentStep((prev) => (prev + 1) as Step);
-        }
+        setCurrentStep((prev) => (prev + 1) as Step);
 
     } 
     // STEP 3: CONVERT LEAD & CREATE SITES (Chained)
@@ -669,6 +652,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 customerSegment: formData.customerSegment,
                 recordTypeId: formData.recordTypeId,
                 userType: formData.userType,
+                tpiIdentifier: formData.tpiIdentifier,
                 
                 // Site Data
                 sites: [
@@ -848,8 +832,6 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
           </div>
         )}
 
-        {/* Progress Indicator - Hidden for TPI */}
-        {formData.userType !== 'tpi' && (
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
@@ -891,7 +873,6 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             ))}
           </div>
         </div>
-        )}
 
         <form onSubmit={handleSubmit} className="p-8 md:p-12 animate-fade-in">
           {/* Step 1: Company and Contact Information */}

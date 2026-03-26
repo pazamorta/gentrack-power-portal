@@ -66,6 +66,7 @@ export interface ParsedInvoiceData {
 
     companySize?: string;
     userType?: string;
+    tpiIdentifier?: string;
     timeline?: string;
     budget?: string;
     customerSegment?: string;

@@ -380,6 +380,10 @@ app.post('/api/salesforce/lead', async (req, res) => {
             Description: `Created via Web Form. TPI: ${data.userType === 'tpi' ? 'Yes' : 'No'}`
         };
 
+        if (data.userType === 'tpi' && data.tpiIdentifier) {
+            leadData.GTCX_TPI__c = '001Dx00001LvqRHIAZ';
+        }
+
         if (recordTypeId) {
             leadData.RecordTypeId = recordTypeId;
         }
@@ -727,6 +731,10 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             GTCX_Customer_Segment__c: data.customerSegment
         };
+
+        if (data.userType === 'tpi' && data.tpiIdentifier) {
+            opportunityFields.GTCX_TPI__c = '001Dx00001LvqRHIAZ';
+        }
 
         if (oppRecordTypeId) {
             opportunityFields.RecordTypeId = oppRecordTypeId;
