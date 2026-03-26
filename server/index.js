@@ -736,7 +736,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
             CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             GTCX_Customer_Segment__c: data.customerSegment,
-            GTCX_CompanyRegistrationNumber__c: data.companyNumber || undefined
+            GTCX_Company_Registration_Number__c: data.companyNumber || undefined
         };
 
         if (data.userType === 'tpi' && data.tpiIdentifier) {
