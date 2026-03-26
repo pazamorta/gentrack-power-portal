@@ -826,20 +826,28 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 };
 
                 // Create GTCX_Property__c record (linked to Account only)
-                const propertyResult = await createRecord('GTCX_Property__c', {
-                    Name: propertyName,
-                    GTCX_Account__c: accountId,
-                    GTCX_Address__Street__s: street,
-                    GTCX_Address__City__s: site.city || '',
-                    GTCX_Address__CountryCode__s: site.country || 'GB',
-                    GTCX_Address__PostalCode__s: postcode,
-                    GTCX_Type__c: site.propertyType || "Site"
-                });
+                let propertyId;
+                try {
+                    const propertyResult = await createRecord('GTCX_Property__c', {
+                        Name: propertyName,
+                        GTCX_Account__c: accountId,
+                        GTCX_Address__Street__s: street,
+                        GTCX_Address__City__s: site.city || '',
+                        GTCX_Address__CountryCode__s: site.country || 'GB',
+                        GTCX_Address__PostalCode__s: postcode,
+                        GTCX_Type__c: site.propertyType || "Site"
+                    });
+                    
+                    if (propertyResult.success || propertyResult.id) {
+                        propertyId = propertyResult.id || propertyResult.id;
+                        createdProperties.push({ id: propertyId, name: propertyName });
+                    }
+                } catch (propErr) {
+                    console.error('Failed to create GTCX_Property__c:', propErr.message);
+                    continue; // Skip the rest if Property fails
+                }
 
-                if (propertyResult.success) {
-                    const propertyId = propertyResult.id;
-                    createdProperties.push({ id: propertyId, name: propertyName });
-
+                if (propertyId) {
                     // Create Association Record (Property <-> Opportunity)
                     try {
                         const assocData = {
@@ -863,7 +871,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                         await createRecord('GTCX_Property_Opp_Association__c', assocData);
                         console.log(`   Linked Property ${propertyId} to Opportunity via Association`);
                     } catch (assocErr) {
-                         console.error('   Failed to create Property Association:', assocErr);
+                         console.error('   Failed to create Property Association:', assocErr.message);
                     }
 
                     if (site.meterPoints && site.meterPoints.length > 0) {
@@ -880,28 +888,36 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                             // Construct Service Point Name: Postcode + MarketIdentifier
                             const servicePointName = `${postcode} ${marketIdentifier}`.trim() || 'Service Point';
 
-                            const servicePointResult = await createRecord('GTCX_Service_Point__c', {
-                                // Name is Auto Number, do not set
-                                GTCX_Market_Identifier__c: marketIdentifier,
-                                GTCX_Service_Type__c: fuelType,
-                                GTCX_Property__c: propertyId, // Link to Property
-                                GTCX_Annual_Consumption__c: meterPoint.annualConsumption || data.totalConsumption || undefined,
-                                GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
-                                GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
-                                GTCX_Contact_Name__c: meterPoint.contactName || undefined,
-                                GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
-                                GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
-                                GTCX_Company_Number__c: meterPoint.companyNumber || undefined,
-                                GTCX_Supply_Status__c: meterPoint.supplyStatus || undefined
-                            });
+                            let annualConsumptionNum = meterPoint.annualConsumption ? parseFloat(meterPoint.annualConsumption) : undefined;
+                            if (isNaN(annualConsumptionNum) && data.totalConsumption) annualConsumptionNum = parseFloat(data.totalConsumption);
+                            if (isNaN(annualConsumptionNum)) annualConsumptionNum = undefined;
 
-                            if (servicePointResult.success) {
-                                createdServicePoints.push({ id: servicePointResult.id, mpan: marketIdentifier });
+                            try {
+                                const servicePointResult = await createRecord('GTCX_Service_Point__c', {
+                                    // Name is Auto Number, do not set
+                                    GTCX_Market_Identifier__c: marketIdentifier,
+                                    GTCX_Service_Type__c: fuelType,
+                                    GTCX_Property__c: propertyId, // Link to Property
+                                    GTCX_Annual_Consumption__c: annualConsumptionNum,
+                                    GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
+                                    GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
+                                    GTCX_Contact_Name__c: meterPoint.contactName || undefined,
+                                    GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
+                                    GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
+                                    GTCX_Company_Number__c: meterPoint.companyNumber || undefined,
+                                    GTCX_Supply_Status__c: meterPoint.supplyStatus || undefined
+                                });
+
+                                if (servicePointResult.success || servicePointResult.id) {
+                                    createdServicePoints.push({ id: servicePointResult.id || servicePointResult.id, mpan: marketIdentifier });
+                                }
+                            } catch (spError) {
+                                console.error(`Failed to create Service Point for MPAN ${marketIdentifier}:`, spError.message);
                             }
                         }
                     }
                 } else {
-                     console.error('Failed to create GTCX_Property__c:', propertyResult.errors);
+                     console.error('Skipping Association and Service Points due to failed Property creation.');
                 }
             }
         }
