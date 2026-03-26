@@ -802,11 +802,18 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         if (data.sites && data.sites.length > 0) {
             console.log(`Processing ${data.sites.length} sites...`);
             for (const site of data.sites) {
-                // Construct Property Name: AccountName + Postcode
-                // Fallback to "Property" if missing
                 const postcode = site.postcodeComponent || site.postcode || '';
                 const street = site.addressComponent || site.address || '';
-                const propertyName = `${data.companyName} ${postcode}`.trim() || `Property ${site.name}`;
+
+                // Construct Property Name:
+                // "If blank, defaults to the Market Identifier or 'Property X'"
+                const fallbackId = (site.meterPoints && site.meterPoints[0] && site.meterPoints[0].mpan)
+                    ? site.meterPoints[0].mpan
+                    : `Property ${postcode || 'Unknown'}`;
+
+                const propertyName = (site.name && !site.name.includes('Unknown Site') && site.name.trim() !== '')
+                    ? site.name
+                    : fallbackId;
 
                 // Helper for tax exemption conversion
                 const parseTaxExemption = (val) => {

@@ -489,14 +489,17 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     }
 
     const text = await file.text();
-    const rows = text.split('\n').map(row => row.split(','));
+    // Auto-detect delimiter
+    const delimiter = text.includes('\t') ? '\t' : ',';
+    const rows = text.split(/\r?\n/).map(row => row.split(delimiter));
     const headers = rows[0].map(h => h.trim());
     
     // Simple CSV parsing (assuming no commas in values for MVP)
     const sitesMap = new Map<string, any>();
     
     rows.slice(1).forEach(row => {
-      if (row.length < 2) return; // Skip empty rows
+      // Skip truly empty rows. Avoid length < 2 check because some rows could literally have 1 column if TSV was short.
+      if (!row || row.length === 0 || row.join('').trim() === '') return;
       
       const getAnyValue = (headerAliases: string[]) => {
         for (const alias of headerAliases) {
