@@ -892,6 +892,15 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                             if (isNaN(annualConsumptionNum) && data.totalConsumption) annualConsumptionNum = parseFloat(data.totalConsumption);
                             if (isNaN(annualConsumptionNum)) annualConsumptionNum = undefined;
 
+                            // Normalize Supply Status for restricted picklist
+                            let supplyStatus = undefined;
+                            if (meterPoint.supplyStatus) {
+                                const statusStr = meterPoint.supplyStatus.toLowerCase();
+                                if (statusStr.includes('active') && !statusStr.includes('inactive')) supplyStatus = 'Registered';
+                                else if (statusStr.includes('inactive')) supplyStatus = 'Not Supplied';
+                                else if (['not supplied', 'onboarding', 'registered', 'rejected', 'new'].includes(meterPoint.supplyStatus)) supplyStatus = meterPoint.supplyStatus;
+                            }
+
                             try {
                                 const servicePointResult = await createRecord('GTCX_Service_Point__c', {
                                     // Name is Auto Number, do not set
@@ -905,7 +914,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                                     GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
                                     GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
                                     GTCX_Company_Number__c: meterPoint.companyNumber || undefined,
-                                    GTCX_Supply_Status__c: meterPoint.supplyStatus || undefined
+                                    GTCX_Supply_Status__c: supplyStatus
                                 });
 
                                 if (servicePointResult.success || servicePointResult.id) {
