@@ -731,11 +731,13 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             oppRecordTypeId = await getRecordTypeId('Opportunity', 'Regulated_Electricity');
         }
 
+        const customerSegment = (data.sites && data.sites.length > 1) ? 'I&C Multi Site' : 'I&C Single Site';
+
         const opportunityFields = {
             StageName: stageName,
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
             CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            GTCX_Customer_Segment__c: data.customerSegment,
+            GTCX_Customer_Segment__c: customerSegment,
             GTCX_Company_Registration_Number__c: data.companyNumber || undefined,
             LeadSource: 'Website'
         };
