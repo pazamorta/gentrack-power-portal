@@ -498,38 +498,80 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     rows.slice(1).forEach(row => {
       if (row.length < 2) return; // Skip empty rows
       
-      const getValue = (headerPart: string) => {
-        const index = headers.findIndex(h => h.includes(headerPart));
-        return index >= 0 ? row[index]?.trim() : '';
+      const getAnyValue = (headerAliases: string[]) => {
+        for (const alias of headerAliases) {
+          const index = headers.findIndex(h => h.toLowerCase().trim() === alias.toLowerCase().trim());
+          if (index >= 0) return row[index]?.trim();
+        }
+        for (const alias of headerAliases) {
+          const index = headers.findIndex(h => h.toLowerCase().includes(alias.toLowerCase()));
+          if (index >= 0) return row[index]?.trim();
+        }
+        return '';
       };
 
-      const siteName = getValue('Site Name') || 'Unknown Site';
-      const servicePointId = getValue('Service Point');
+      const siteName = getAnyValue(['Property Name', 'PropertyName', 'Name', 'Site Name']) || 'Unknown Site';
+      const address1 = getAnyValue(['AddressLine1', 'Address Line 1', 'Street', 'Address', 'Address Line1']);
+      const address2 = getAnyValue(['AddressLine2', 'Address Line 2', 'AddressLine 2', 'AddresLine2']);
+      const city = getAnyValue(['City', 'Town']);
+      const postcode = getAnyValue(['Postcode', 'Post Code', 'PostalCode', 'Postal Code']);
+      const propertyType = getAnyValue(['Type', 'Property Type', 'PropertyType']);
       
+      const startDate = getAnyValue(['start_date', 'Start Date', 'StartDate', 'GTCX_Start_Date__c']);
+      const endDate = getAnyValue(['end_date', 'End Date', 'EndDate', 'GTCX_End_Date__c']);
+      const product = getAnyValue(['product', 'Product', 'GTCX_Product__c']);
+      const marginValue = getAnyValue(['tpi_margin', 'TPI Margin', 'TPI Margin Value', 'margin_value', 'Margin Value', 'GTCX_Margin_Value__c']);
+      const taxExemption = getAnyValue(['tax_exemption', 'Tax Exemption', 'TaxExemption', 'GTCX_Tax_Exemption__c']);
+      const paymentTerm = getAnyValue(['payment_term', 'payment_terms', 'Payment Term', 'Payment Terms', 'GTCX_Payment_Term__c']);
+      
+      const marketIdentifier = getAnyValue(['market_identifier', 'Market Identifier', 'MarketIdentifier', 'GTCX_Market_Identifier__c', 'Service Point']);
+      const serviceType = getAnyValue(['Service Type', 'ServiceType', 'GTCX_Service_Type__c', 'Fuel Type']);
+      const annualConsumption = getAnyValue(['Annual Consumption', 'AnnualConsumption', 'GTCX_Annual_Consumption__c', 'Annual Consumption*']);
+      
+      const contactName = getAnyValue(['Contact Name', 'Service Point Contact Name']);
+      const contactEmail = getAnyValue(['Contact Email', 'Service Point Contact email']);
+      const contactPhone = getAnyValue(['Contact Phone', 'Service Point Contact tel']);
+      const companyNumber = getAnyValue(['Company Number', 'Service Point Company Number']);
+      const productPreference = getAnyValue(['Product Preference', 'Product Preference*']);
+      const durationOptions = getAnyValue(['Duration Options', 'Duration Options*']);
+      const supplyStatus = getAnyValue(['Supply Status']);
+
+      const fullAddress = [address1, address2].filter(Boolean).join(', ');
+
       if (!sitesMap.has(siteName)) {
         sitesMap.set(siteName, {
           name: siteName,
-          address: `${getValue('Address')} ${getValue('Postcode')}`.trim(),
-          addressComponent: getValue('Address'),
-          postcodeComponent: getValue('Postcode'),
+          address: `${fullAddress} ${postcode}`.trim(),
+          addressComponent: fullAddress,
+          city: city,
+          postcodeComponent: postcode,
+          postcode: postcode,
+          propertyType: propertyType,
+          startDate: startDate,
+          endDate: endDate,
+          product: product,
+          marginValue: marginValue,
+          taxExemption: taxExemption,
+          paymentTerm: paymentTerm,
           meterPoints: []
         });
       }
 
-      if (servicePointId) {
+      if (marketIdentifier) {
         sitesMap.get(siteName).meterPoints.push({
-          mpan: servicePointId,
-          meterNumber: servicePointId,
-          address: getValue('Address'),
-          postcode: getValue('Postcode'),
-          fuelType: getValue('Fuel Type'),
-          productPreference: getValue('Product Preference') || getValue('Product Preference*'),
-          durationOptions: getValue('Duration Options') || getValue('Duration Options*'),
-          annualConsumption: getValue('Annual Consumption') || getValue('Annual Consumption*'),
-          contactName: getValue('Service Point Contact Name') || getValue('Service Point Contact Name*'),
-          contactEmail: getValue('Service Point Contact email') || getValue('Service Point Contact email*'),
-          contactPhone: getValue('Service Point Contact tel') || getValue('Service Point Contact tel*'),
-          companyNumber: getValue('Service Point Company Number')
+          mpan: marketIdentifier,
+          meterNumber: marketIdentifier,
+          address: fullAddress,
+          postcode: postcode,
+          fuelType: serviceType,
+          productPreference: productPreference,
+          durationOptions: durationOptions,
+          annualConsumption: annualConsumption,
+          contactName: contactName,
+          contactEmail: contactEmail,
+          contactPhone: contactPhone,
+          companyNumber: companyNumber,
+          supplyStatus: supplyStatus
         });
       }
     });

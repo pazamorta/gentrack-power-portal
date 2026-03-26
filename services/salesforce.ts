@@ -3,6 +3,16 @@ export interface MeterPoint {
     mpan: string;
     meterNumber: string;
     address?: string;
+    postcode?: string;
+    fuelType?: string;
+    productPreference?: string;
+    durationOptions?: string;
+    annualConsumption?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    companyNumber?: string;
+    supplyStatus?: string;
 }
 
 export interface Site {
@@ -11,6 +21,13 @@ export interface Site {
     postcode?: string;
     city?: string; // Added for Salesforce Compound Field
     country?: string; // Added for Salesforce Compound Field
+    propertyType?: string;
+    startDate?: string;
+    endDate?: string;
+    product?: string;
+    marginValue?: string;
+    taxExemption?: string;
+    paymentTerm?: string;
     meterPoints: MeterPoint[];
 }
 

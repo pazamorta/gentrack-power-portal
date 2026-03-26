@@ -808,7 +808,16 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 const street = site.addressComponent || site.address || '';
                 const propertyName = `${data.companyName} ${postcode}`.trim() || `Property ${site.name}`;
 
-                // Create GTCX_Property__c
+                // Helper for tax exemption conversion
+                const parseTaxExemption = (val) => {
+                    if (!val) return undefined;
+                    const str = val.toString().toLowerCase().trim();
+                    if (['true', 'yes', 'y', '1'].includes(str)) return 1;
+                    if (['false', 'no', 'n', '0'].includes(str)) return 0;
+                    const parsed = parseFloat(str);
+                    return isNaN(parsed) ? undefined : parsed;
+                };
+
                 // Create GTCX_Property__c record (linked to Account only)
                 const propertyResult = await createRecord('GTCX_Property__c', {
                     Name: propertyName,
@@ -816,7 +825,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     GTCX_Address__Street__s: street,
                     GTCX_Address__City__s: site.city || '',
                     GTCX_Address__CountryCode__s: site.country || 'GB',
-                    GTCX_Address__PostalCode__s: postcode
+                    GTCX_Address__PostalCode__s: postcode,
+                    GTCX_Type__c: site.propertyType || "Site"
                 });
 
                 if (propertyResult.success) {
@@ -825,10 +835,25 @@ app.post('/api/salesforce/invoice', async (req, res) => {
 
                     // Create Association Record (Property <-> Opportunity)
                     try {
-                        await createRecord('GTCX_Property_Opp_Association__c', {
+                        const assocData = {
                             GTCX_Property__c: propertyId,
                             GTCX_Opportunity__c: opportunityId
-                        });
+                        };
+                        
+                        if (site.startDate) assocData.GTCX_Start_Date__c = site.startDate;
+                        if (site.endDate) assocData.GTCX_End_Date__c = site.endDate;
+                        if (site.product) assocData.GTCX_Product__c = site.product;
+                        
+                        const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
+                        if (!isNaN(marginValue)) assocData.GTCX_Margin_Value__c = marginValue;
+                        
+                        const taxExemption = parseTaxExemption(site.taxExemption);
+                        if (taxExemption !== undefined) assocData.GTCX_Tax_Exemption__c = taxExemption;
+                        
+                        const paymentTerm = site.paymentTerm ? parseInt(site.paymentTerm) : NaN;
+                        if (!isNaN(paymentTerm)) assocData.GTCX_Payment_Term__c = paymentTerm;
+
+                        await createRecord('GTCX_Property_Opp_Association__c', assocData);
                         console.log(`   Linked Property ${propertyId} to Opportunity via Association`);
                     } catch (assocErr) {
                          console.error('   Failed to create Property Association:', assocErr);
@@ -856,11 +881,11 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                                 GTCX_Annual_Consumption__c: meterPoint.annualConsumption || data.totalConsumption || undefined,
                                 GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
                                 GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
-                                // GTCX_Contact_Name__c, Email, Phone - keeping these if they exist on the object
                                 GTCX_Contact_Name__c: meterPoint.contactName || undefined,
                                 GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
                                 GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
-                                GTCX_Company_Number__c: meterPoint.companyNumber || undefined
+                                GTCX_Company_Number__c: meterPoint.companyNumber || undefined,
+                                GTCX_Supply_Status__c: meterPoint.supplyStatus || undefined
                             });
 
                             if (servicePointResult.success) {
