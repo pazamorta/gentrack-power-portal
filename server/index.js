@@ -375,9 +375,10 @@ app.post('/api/salesforce/lead', async (req, res) => {
             Phone: data.phone,
             Title: data.jobTitle,
             Website: data.website,
-            LeadSource: 'Web',
+            LeadSource: 'Website',
             Status: 'Open - Not Contacted',
-            Description: `Created via Web Form. TPI: ${data.userType === 'tpi' ? 'Yes' : 'No'}`
+            Description: `Created via Web Form. TPI: ${data.userType === 'tpi' ? 'Yes' : 'No'}`,
+            GTCX_CompanyRegistrationNumber__c: data.companyNumber
         };
 
         if (data.userType === 'tpi' && data.tpiIdentifier) {
@@ -496,7 +497,12 @@ app.patch('/api/salesforce/opportunity/:id', async (req, res) => {
         
         // Handle specific mappings
         if (data.contractStartDate) fieldsToUpdate.GTCX_Estimated_Contract_Start_Date__c = data.contractStartDate;
-        if (data.contractLength) fieldsToUpdate.GTCX_Contract_Length__c = data.contractLength;
+        if (data.contractLength) {
+            // Salesfore Multi-Select picklists require a semicolon separated string
+            fieldsToUpdate.GTCX_Duration_Preferences__c = Array.isArray(data.contractLength) 
+                ? data.contractLength.join(';') 
+                : data.contractLength;
+        }
         if (data.onsiteGeneration !== undefined) fieldsToUpdate.GTCX_Onsite_Generation__c = Boolean(data.onsiteGeneration);
         
         // Remove standard/description mappings if they are no longer needed, or keep as fallback? 
@@ -729,7 +735,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             StageName: stageName,
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
             CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            GTCX_Customer_Segment__c: data.customerSegment
+            GTCX_Customer_Segment__c: data.customerSegment,
+            GTCX_CompanyRegistrationNumber__c: data.companyNumber || undefined
         };
 
         if (data.userType === 'tpi' && data.tpiIdentifier) {
