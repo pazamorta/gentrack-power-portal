@@ -537,7 +537,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
 
         let accountId;
         let contactId;
-        let opportunityId;
+        let opportunityId = null;
         let stageName = (data.sites && data.sites.length > 0) ? 'Qualification' : 'Prospecting';
 
         // Helper to get converted status
@@ -863,11 +863,12 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                         ...opportunityFields
                      });
                      if (retryOppResult.success) opportunityId = retryOppResult.id;
-                 } else {
-                     console.error('Failed to create Opportunity:', oppError);
-                     // Proceed without opp? No, better to let it fail or log
-                 }
-            }
+                  } else {
+                      console.error('❌ Failed to create Opportunity (Permanent):', oppError.message);
+                      // CRITICAL: Stop swallowing the error. Re-throw so the user gets the real Salesforce reason.
+                      throw new Error(`Opportunity Creation Failed: ${oppError.message}`);
+                  }
+             }
         }
 
         // 3.5. OPPORTUNITY CONTACT ROLE (MANDATORY GTCX REQUIREMENT)
