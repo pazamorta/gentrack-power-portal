@@ -690,6 +690,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) || undefined : undefined,
                 Website: data.website,
                 GTCX_Credit_Rating__c: 'Good',
+                GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
                 BillingStreet: '203 Eversholt Street',
                 BillingCity: 'London',
                 BillingPostalCode: 'NW1 1BU.',
@@ -740,6 +741,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                  Industry: data.industry,
                  NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined,
                  GTCX_Credit_Rating__c: 'Good',
+                 GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
                  BillingStreet: '203 Eversholt Street',
                  BillingCity: 'London',
                  BillingPostalCode: 'NW1 1BU.'
@@ -802,10 +804,8 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             LeadSource: 'Website',
             
             // NEW GTCX Requirements
-            GTCX_Credit_Rating__c: 'Good',
             GTCX_LOA_Level__c: 1,
             GTCX_LOA_Reference__c: 'Included',
-            GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
             GTCX_Service_Type__c: serviceType,
             GTCX_Estimated_Contract_End_Date__c: estimatedEndDate,
             GTCX_Estimated_Sites_c__c: data.sites?.length || 0,
