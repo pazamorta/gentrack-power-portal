@@ -1628,18 +1628,20 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
           {/* Navigation Buttons */}
           <div className={`flex items-center justify-between mt-8 pt-6 border-t ${theme === 'light' ? 'border-gray-200' : 'border-white/10'}`}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={currentStep === 1 ? () => window.location.href = '/' : handlePrevious}
-              className={`${theme === 'light' ? 'border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 shadow-sm' : 'border-white/10 text-white bg-white/5 hover:bg-white/10'} flex flex-row items-center justify-center whitespace-nowrap`}
-              icon={false}
-            >
-              <div className="flex items-center">
-                <ChevronLeft className={`w-4 h-4 mr-2 ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`} />
-                <span>{currentStep === 1 ? 'Back to Home' : 'Previous'}</span>
-              </div>
-            </Button>
+            {currentStep > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                className={`${theme === 'light' ? 'border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 shadow-sm' : 'border-white/10 text-white bg-white/5 hover:bg-white/10'} flex flex-row items-center justify-center whitespace-nowrap`}
+                icon={false}
+              >
+                <div className="flex items-center">
+                  <ChevronLeft className={`w-4 h-4 mr-2 ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`} />
+                  <span>Previous</span>
+                </div>
+              </Button>
+            ) : <div />}
 
             {currentStep < 4 ? (
                 <Button
