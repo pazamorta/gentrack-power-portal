@@ -645,10 +645,10 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 console.error('⚠️ Conversion failed:', responseText);
                 throw new Error('Lead Conversion Failed. SOAP Response: ' + responseText);
             } else {
-                // Parse IDs from XML using simple Regex
-                const accountMatch = responseText.match(/<accountId>(.*?)<\/accountId>/);
-                const contactMatch = responseText.match(/<contactId>(.*?)<\/contactId>/);
-                const opportunityMatch = responseText.match(/<opportunityId>(.*?)<\/opportunityId>/);
+                // Parse IDs from XML using more robust Regex (handles casing and potential namespaces/prefixes)
+                const accountMatch = responseText.match(/<(?:\w+:)?accountId>(.*?)<\/(?:\w+:)?accountId>/i);
+                const contactMatch = responseText.match(/<(?:\w+:)?contactId>(.*?)<\/(?:\w+:)?contactId>/i);
+                const opportunityMatch = responseText.match(/<(?:\w+:)?opportunityId>(.*?)<\/(?:\w+:)?opportunityId>/i);
                 
                 accountId = accountMatch ? accountMatch[1] : null;
                 contactId = contactMatch ? contactMatch[1] : null;
@@ -656,6 +656,20 @@ app.post('/api/salesforce/invoice', async (req, res) => {
 
                 console.log('✅ Lead Converted Successfully via SOAP!');
                 console.log('   Account:', accountId, 'Contact:', contactId, 'Opp:', opportunityId);
+
+                // FALLBACK: If Opportunity ID is missing from SOAP but Account was created, try to find it
+                if (!opportunityId && accountId) {
+                    console.log('⚠️ Opportunity ID missing from SOAP response. Attempting fallback query...');
+                    try {
+                        const oppQuery = await query(`SELECT Id FROM Opportunity WHERE AccountId = '${accountId}' ORDER BY CreatedDate DESC LIMIT 1`);
+                        if (oppQuery.totalSize > 0) {
+                            opportunityId = oppQuery.records[0].Id;
+                            console.log('   Found Opportunity via fallback query:', opportunityId);
+                        }
+                    } catch (oqErr) {
+                        console.error('   Fallback Opportunity query failed:', oqErr.message);
+                    }
+                }
             }
         }
         }

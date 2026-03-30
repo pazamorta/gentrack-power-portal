@@ -774,10 +774,15 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
       }
 
       const oppResult = await promises.current.opportunity;
-      const opportunityId = oppResult.opportunityId;
+      console.log('Background Submission: Received Opportunity result:', oppResult);
+      
+      const opportunityId = oppResult?.opportunityId;
 
       if (!opportunityId) {
-          console.error("Background Error: Failed to retrieve Opportunity ID.");
+          console.error("Background Error: Failed to retrieve Opportunity ID from background promise.", {
+              hasResult: !!oppResult,
+              keys: oppResult ? Object.keys(oppResult) : []
+          });
           return;
       }
       
