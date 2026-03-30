@@ -733,13 +733,60 @@ app.post('/api/salesforce/invoice', async (req, res) => {
 
         const customerSegment = (data.sites && data.sites.length > 1) ? 'I&C Multi Site' : 'I&C Single Site';
 
+        // Advanced Logic for GTCX Opportunity Fields
+        let serviceType = 'Hybrid';
+        if (data.energyDomains && data.energyDomains.length === 1) {
+            const domain = data.energyDomains[0].toLowerCase();
+            if (domain.includes('elect')) serviceType = 'Electricity';
+            else if (domain.includes('gas')) serviceType = 'Gas';
+            else if (domain.includes('water')) serviceType = 'Water';
+        }
+
+        // Calculate Contract End Date (Start + Duration)
+        const calculateEndDate = (startDate, durationStr) => {
+            if (!startDate) return null;
+            const date = new Date(startDate);
+            if (isNaN(date.getTime())) return null;
+            
+            // Extract numeric value from "12 Months", "24 Months", etc.
+            const months = parseInt(durationStr) || 12; 
+            date.setMonth(date.getMonth() + months);
+            return date.toISOString().split('T')[0];
+        };
+        const estimatedEndDate = calculateEndDate(data.contractStartDate, data.contractLength);
+
+        // Sum Annual Consumption for Total Volume
+        const totalVolumeMWh = data.sites?.reduce((acc, site) => {
+            const siteVolume = site.meterPoints?.reduce((sAcc, mp) => {
+                return sAcc + (parseFloat(mp.annualConsumption) || 0);
+            }, 0) || 0;
+            return acc + siteVolume;
+        }, 0) || 0;
+
+        // Calculate Average Margin
+        const margins = data.sites?.map(s => parseFloat(s.marginValue)).filter(v => !isNaN(v)) || [];
+        const avgMargin = margins.length > 0 ? (margins.reduce((a, b) => a + b, 0) / margins.length) : 0;
+
         const opportunityFields = {
             StageName: stageName,
             Amount: opportunityAmount || (data.totalAmount ? data.totalAmount * 12 : undefined),
             CloseDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             GTCX_Customer_Segment__c: customerSegment,
             GTCX_Company_Registration_Number__c: data.companyNumber || undefined,
-            LeadSource: 'Website'
+            LeadSource: 'Website',
+            
+            // NEW GTCX Requirements
+            GTCX_Credit_Rating__c: 'Good',
+            GTCX_LOA_Level__c: 1,
+            GTCX_LOA_Reference__c: 'Included',
+            GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
+            GTCX_Service_Type__c: serviceType,
+            GTCX_Estimated_Contract_End_Date__c: estimatedEndDate,
+            GTCX_Estimated_Sites_c__c: data.sites?.length || 0,
+            GTCX_TPI_Margin__c: avgMargin,
+            GTCX_TPI_Margin_Unit__c: '8% of energy',
+            GTCX_Estimated_Volume_MWh__c: totalVolumeMWh,
+            GTCX_TPI_Agent__c: contactId
         };
 
         if (data.userType === 'tpi' && data.tpiIdentifier) {
@@ -802,6 +849,31 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                      console.error('Failed to create Opportunity:', oppError);
                      // Proceed without opp? No, better to let it fail or log
                  }
+            }
+        }
+
+        // 3.5. OPPORTUNITY CONTACT ROLE (MANDATORY GTCX REQUIREMENT)
+        if (opportunityId && contactId) {
+            try {
+                // Check if role already exists for this pair
+                const existingRoleQuery = await query(`SELECT Id FROM OpportunityContactRole WHERE OpportunityId = '${opportunityId}' AND ContactId = '${contactId}'`);
+                
+                if (existingRoleQuery.totalSize === 0) {
+                    console.log('Creating OpportunityContactRole (Role=TPI)...');
+                    await createRecord('OpportunityContactRole', {
+                        OpportunityId: opportunityId,
+                        ContactId: contactId,
+                        Role: 'TPI',
+                        IsPrimary: true
+                    });
+                } else {
+                    console.log('Updating existing OpportunityContactRole to TPI...');
+                    await updateRecord('OpportunityContactRole', existingRoleQuery.records[0].Id, {
+                        Role: 'TPI'
+                    });
+                }
+            } catch (roleErr) {
+                console.error('Failed to manage OpportunityContactRole:', roleErr.message);
             }
         }
 

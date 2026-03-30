@@ -681,6 +681,11 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 userType: formData.userType,
                 tpiIdentifier: formData.tpiIdentifier,
                 
+                contractStartDate: formData.contractStartDate,
+                contractLength: formData.contractLength,
+                energyDomains: formData.energyDomains,
+                onsiteGeneration: formData.onsiteGeneration,
+                
                 // Site Data
                 sites: [
                     ...(invoiceData?.sites || []),
@@ -919,6 +924,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
               <p className={`mb-8 ${theme === 'light' ? 'text-gray-700' : 'text-secondary'}`}>Let's start with the basics.</p>
 
               {/* User Type Switch */}
+              {/* Navigation through global footer only */}
               <div className="flex justify-center mb-8">
                 <div className={`p-1 rounded-full inline-flex border ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-white/5 border-white/10'}`}>
                   <button

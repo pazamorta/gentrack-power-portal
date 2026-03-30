@@ -90,6 +90,7 @@ export interface ParsedInvoiceData {
     contractLength?: string;
     contractStartDate?: string;
     onsiteGeneration?: boolean;
+    energyDomains?: string[];
     recordTypeId?: string;
     
     // Savings analysis
