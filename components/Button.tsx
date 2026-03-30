@@ -32,7 +32,7 @@ export const Button: React.FC<ButtonProps> = ({
       ? "bg-white/10 text-gray-500 cursor-not-allowed px-6 py-3"
       : "bg-white text-black hover:bg-gray-200 px-6 py-3 cursor-pointer",
     secondary: "bg-surface text-white hover:bg-gray-800 px-6 py-3 border border-gray-800 cursor-pointer",
-    outline: "bg-transparent text-white border border-white/20 hover:border-white hover:bg-white/5 px-6 py-3 cursor-pointer",
+    outline: "bg-transparent border border-white/20 hover:border-white hover:bg-white/5 px-6 py-3 cursor-pointer",
     link: "bg-transparent text-white hover:text-gray-300 p-0 cursor-pointer"
   };
 
@@ -88,7 +88,7 @@ export const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
     >
-      <span className="mr-2">{children}</span>
+      <span className={icon ? "mr-2" : ""}>{children}</span>
       {icon && <ArrowRight size={16} />}
     </button>
   );
