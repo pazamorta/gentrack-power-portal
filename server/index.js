@@ -689,6 +689,10 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 Industry: data.industry ? data.industry.charAt(0).toUpperCase() + data.industry.slice(1) : undefined,
                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) || undefined : undefined,
                 Website: data.website,
+                GTCX_Credit_Rating__c: 'Good',
+                BillingStreet: '203 Eversholt Street',
+                BillingCity: 'London',
+                BillingPostalCode: 'NW1 1BU.',
                 Description: `Created/Updated from Web Form on ${new Date().toISOString()}`
             };
 
@@ -734,7 +738,11 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         if (accountId) {
              await updateRecord('Account', accountId, {
                  Industry: data.industry,
-                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined
+                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined,
+                 GTCX_Credit_Rating__c: 'Good',
+                 BillingStreet: '203 Eversholt Street',
+                 BillingCity: 'London',
+                 BillingPostalCode: 'NW1 1BU.'
              });
         }
 
