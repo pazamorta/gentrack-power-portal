@@ -303,8 +303,11 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   };
 
   const handleDownloadTemplate = () => {
+    // Vite BASE_URL should be prepended to all absolute paths in the public directory
+    const baseUrl = import.meta.env.BASE_URL || '/';
     const link = document.createElement('a');
-    link.href = '/portfolio_template.xlsx';
+    // Ensure we don't have double slashes
+    link.href = `${baseUrl}/portfolio_template.xlsx`.replace(/\/+/g, '/');
     link.download = 'portfolio_template.xlsx';
     document.body.appendChild(link);
     link.click();
