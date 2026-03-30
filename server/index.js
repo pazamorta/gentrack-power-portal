@@ -802,7 +802,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             GTCX_Estimated_Contract_End_Date__c: estimatedEndDate,
             GTCX_Estimated_Sites_c__c: data.sites?.length || 0,
             GTCX_TPI_Margin__c: avgMargin,
-            GTCX_TPI_Margin_Unit__c: '8% of energy',
+            GTCX_TPI_Margin_Unit__c: '% of energy',
             GTCX_Estimated_Volume_MWh__c: totalVolumeMWh,
             GTCX_TPI_Agent__c: contactId
         };
