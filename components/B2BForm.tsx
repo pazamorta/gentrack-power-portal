@@ -832,16 +832,26 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             Thanks for trusting Oxygen with your company's energy needs. We will get back to you very soon.
         </p>
 
-        <div className="mt-12">
+        <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-4">
             <button 
                 onClick={() => window.location.reload()}
-                className={`px-6 py-3 rounded-lg transition-colors border ${
+                className={`px-6 py-3 rounded-lg transition-colors border w-full md:w-auto ${
+                    theme === 'light'
+                    ? 'bg-[#00E599] hover:bg-[#00cc88] text-black border-[#00E599]'
+                    : 'bg-[#00E599] hover:bg-[#00cc88] text-black border-[#00E599]'
+                }`}
+            >
+                Submit Another Application
+            </button>
+            <button 
+                onClick={() => window.location.href = '/'}
+                className={`px-6 py-3 rounded-lg transition-colors border w-full md:w-auto ${
                     theme === 'light'
                     ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300'
                     : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
                 }`}
             >
-                Submit Another Application
+                Return to Home
             </button>
         </div>
     </div>
@@ -1612,19 +1622,18 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
-            {currentStep > 1 ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevious}
-                className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'} flex flex-row items-center justify-center whitespace-nowrap`}
-                icon={false}
-              >
-                <span>Previous</span>
-              </Button>
-            ) : (
-              <div /> // Spacer
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={currentStep === 1 ? () => window.location.href = '/' : handlePrevious}
+              className={`${theme === 'light' ? 'border-gray-300 text-gray-700 hover:bg-gray-50' : 'border-white/10 text-white hover:bg-white/5'} flex flex-row items-center justify-center whitespace-nowrap`}
+              icon={false}
+            >
+              <div className="flex items-center">
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                <span>{currentStep === 1 ? 'Back to Home' : 'Previous'}</span>
+              </div>
+            </Button>
 
             {currentStep < 4 ? (
                 <Button
@@ -1636,7 +1645,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                   icon={false}
                 >
                   <div className="flex items-center flex-nowrap whitespace-nowrap">
-                    <span className="mr-2">{formData.userType === 'tpi' ? 'Submit' : 'Next'}</span>
+                    <span className="mr-2">Next</span>
                     <ChevronRight className="w-5 h-5 flex-shrink-0" />
                   </div>
                 </Button>
