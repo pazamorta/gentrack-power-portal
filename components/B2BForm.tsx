@@ -854,7 +854,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 Submit Another Application
             </button>
             <button 
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/gentrack-power-portal/#/'}
                 className={`px-6 py-3 rounded-lg transition-colors border w-full md:w-auto ${
                     theme === 'light'
                     ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300'
