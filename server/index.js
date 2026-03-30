@@ -690,7 +690,12 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) || undefined : undefined,
                 Website: data.website,
                 GTCX_Credit_Rating__c: 'Good',
-                GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
+                GTCX_Registered_Address__c: {
+                    street: '203 Eversholt Street',
+                    city: 'London',
+                    postalCode: 'NW1 1BU.',
+                    countryCode: 'GB'
+                },
                 BillingStreet: '203 Eversholt Street',
                 BillingCity: 'London',
                 BillingPostalCode: 'NW1 1BU.',
@@ -741,7 +746,12 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                  Industry: data.industry,
                  NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined,
                  GTCX_Credit_Rating__c: 'Good',
-                 GTCX_Registered_Address__c: '203 Eversholt Street, London, NW1 1BU.',
+                 GTCX_Registered_Address__c: {
+                     street: '203 Eversholt Street',
+                     city: 'London',
+                     postalCode: 'NW1 1BU.',
+                     countryCode: 'GB'
+                 },
                  BillingStreet: '203 Eversholt Street',
                  BillingCity: 'London',
                  BillingPostalCode: 'NW1 1BU.'
