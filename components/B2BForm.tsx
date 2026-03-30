@@ -303,33 +303,12 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   };
 
   const handleDownloadTemplate = () => {
-    const headers = [
-      'Service Point',
-      'Fuel Type',
-      'Address',
-      'Postcode',
-      'Product Preference*',
-      'Duration Options*',
-      'Annual Consumption*',
-      'Site Name*',
-      'Service Point Contact Name*',
-      'Service Point Contact email*',
-      'Service Point Contact tel*',
-      'Service Point Company Number'
-    ];
-    
-    const csvContent = headers.join(',') + '\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'portfolio_template.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    link.href = '/portfolio_template.xlsx';
+    link.download = 'portfolio_template.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
