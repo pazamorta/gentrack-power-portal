@@ -590,9 +590,10 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     const convertedLead = leadStatusQuery.records[0];
                     accountId = convertedLead.ConvertedAccountId;
                     contactId = convertedLead.ConvertedContactId;
-                    opportunityId = convertedLead.ConvertedOpportunityId;
+                    // We DO NOT reuse the old OpportunityId; we want a brand new one for each application
+                    opportunityId = null; 
                     isAlreadyConverted = true;
-                    console.log('   Using existing Converted IDs:', accountId, contactId, opportunityId);
+                    console.log('   Reusing existing Account/Contact but FORCING NEW Opportunity:', accountId, contactId);
                 }
             } catch (err) {
                 console.error('Error checking lead conversion status:', err);
