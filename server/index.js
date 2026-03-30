@@ -640,6 +640,9 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             });
 
             const responseText = await conversionResponse.text();
+            console.log('--- SOAP RESPONSE (LeadConvert) ---');
+            console.log(responseText.replace(session.accessToken, 'REDACTED')); 
+            console.log('------------------------------------');
 
             if (!conversionResponse.ok || responseText.includes('success>false<')) {
                 console.error('⚠️ Conversion failed:', responseText);
@@ -1094,6 +1097,20 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 hasAccount: !!accountId,
                 hasOpp: !!opportunityId
             });
+        }
+
+        // Final Catch-All: If opportunityId is still missing but we have an accountId, find the newest Opp
+        if (!opportunityId && accountId) {
+            console.log('🚨 LAST RESORT: Opportunity ID still missing. Querying Account child records...');
+            try {
+                const finalOppQuery = await query(`SELECT Id FROM Opportunity WHERE AccountId = '${accountId}' ORDER BY CreatedDate DESC LIMIT 1`);
+                if (finalOppQuery.totalSize > 0) {
+                    opportunityId = finalOppQuery.records[0].Id;
+                    console.log('   ✅ RECOVERED Opportunity ID from final query:', opportunityId);
+                }
+            } catch (err) {
+                console.error('   ❌ Final Opportunity recovery query failed:', err.message);
+            }
         }
 
         // Response
