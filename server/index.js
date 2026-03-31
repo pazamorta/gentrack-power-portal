@@ -943,7 +943,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                         BillingStreet: street,
                         BillingCity: site.city || '',
                         BillingPostalCode: postcode,
-                        BillingCountryCode: site.country || 'GB'
+                        BillingCountry: site.country || 'GB'
                     });
                     if (subAccountResult.success) {
                         propertyAccountId = subAccountResult.id;
