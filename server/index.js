@@ -932,12 +932,33 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     return isNaN(parsed) ? undefined : parsed;
                 };
 
-                // Create GTCX_Property__c record (linked to Account only)
+                // Create a sub-Account for this property
+                let propertyAccountId;
+                try {
+                    console.log(`Creating Property Sub-Account: ${propertyName}`);
+                    const subAccountResult = await createRecord('Account', {
+                        Name: propertyName,
+                        ParentId: accountId,
+                        Type: 'Prospect',
+                        BillingStreet: street,
+                        BillingCity: site.city || '',
+                        BillingPostalCode: postcode,
+                        BillingCountryCode: site.country || 'GB'
+                    });
+                    if (subAccountResult.success) {
+                        propertyAccountId = subAccountResult.id;
+                        console.log(`   ✅ Property Sub-Account created: ${propertyAccountId}`);
+                    }
+                } catch (accErr) {
+                    console.warn(`   ⚠️ Property Sub-Account creation failed: ${accErr.message}. Falling back to main account.`);
+                }
+
+                // Create GTCX_Property__c record
                 let propertyId;
                 try {
                     const propertyResult = await createRecord('GTCX_Property__c', {
                         Name: propertyName,
-                        GTCX_Account__c: accountId,
+                        GTCX_Account__c: propertyAccountId || accountId, // Link to Sub-Account, fallback to Main Account
                         GTCX_Address__Street__s: street,
                         GTCX_Address__City__s: site.city || '',
                         GTCX_Address__CountryCode__s: site.country || 'GB',
@@ -948,6 +969,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                     if (propertyResult.success || propertyResult.id) {
                         propertyId = propertyResult.id || propertyResult.id;
                         createdProperties.push({ id: propertyId, name: propertyName });
+                        console.log(`   ✅ Property created: ${propertyId} (Account: ${propertyAccountId || accountId})`);
                     }
                 } catch (propErr) {
                     console.error('Failed to create GTCX_Property__c:', propErr.message);
