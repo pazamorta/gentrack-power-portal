@@ -742,7 +742,11 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                  GTCX_Credit_Rating__c: 'Good',
                  BillingStreet: '203 Eversholt Street',
                  BillingCity: 'London',
-                 BillingPostalCode: 'NW1 1BU.'
+                 BillingPostalCode: 'NW1 1BU.',
+                 Legal_Name__c: data.companyName,
+                 GTCX_Points_Of_Delivery_Count__c: data.sites?.length || 0,
+                 GTCX_Broker_Name__c: 'Easy Broker',
+                 GTCX_Credit_Score__c: 75
              });
         }
 
