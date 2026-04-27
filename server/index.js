@@ -538,7 +538,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         let accountId;
         let contactId;
         let opportunityId = null;
-        let stageName = (data.sites && data.sites.length > 0) ? 'Qualification' : 'Prospecting';
+        let stageName = (data.sites && data.sites.length > 0) ? 'Qualification' : 'Qualification';
 
         // Helper to get converted status
         // Helper to get converted status
@@ -764,7 +764,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         const customerSegment = (data.sites && data.sites.length > 1) ? 'I&C Multi Site' : 'I&C Single Site';
 
         // Advanced Logic for GTCX Opportunity Fields
-        let serviceType = 'Hybrid';
+        let serviceType = 'Dual Fuel';
         if (data.energyDomains && data.energyDomains.length === 1) {
             const domain = data.energyDomains[0].toLowerCase();
             if (domain.includes('elect')) serviceType = 'Electricity';
@@ -812,7 +812,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             GTCX_Estimated_Contract_End_Date__c: estimatedEndDate,
             GTCX_Estimated_Sites_c__c: data.sites?.length || 0,
             GTCX_TPI_Margin__c: avgMargin,
-            GTCX_TPI_Margin_Unit__c: '% of energy',
+            GTCX_TPI_Margin_Unit__c: 'p/kwh',
             GTCX_Estimated_Volume_MWh__c: totalVolumeMWh,
             GTCX_TPI_Agent__c: contactId
         };
@@ -1029,9 +1029,22 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                             let supplyStatus = undefined;
                             if (meterPoint.supplyStatus) {
                                 const statusStr = meterPoint.supplyStatus.toLowerCase();
-                                if (statusStr.includes('active') && !statusStr.includes('inactive')) supplyStatus = 'Registered';
-                                else if (statusStr.includes('inactive')) supplyStatus = 'Not Supplied';
-                                else if (['not supplied', 'onboarding', 'registered', 'rejected', 'new'].includes(meterPoint.supplyStatus)) supplyStatus = meterPoint.supplyStatus;
+                                const validStatuses = {
+                                    'not supplied': 'Not Supplied',
+                                    'onboarding': 'Onboarding',
+                                    'registered': 'Registered',
+                                    'rejected': 'Rejected',
+                                    'new': 'New'
+                                };
+                                
+                                if (statusStr.includes('active') && !statusStr.includes('inactive')) {
+                                    supplyStatus = 'Registered';
+                                } else if (statusStr.includes('inactive')) {
+                                    supplyStatus = 'Not Supplied';
+                                } else {
+                                    // Direct match or lookup
+                                    supplyStatus = validStatuses[statusStr] || undefined;
+                                }
                             }
 
                             try {
