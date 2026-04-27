@@ -685,8 +685,18 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             const existingAccountsQuery = `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' LIMIT 1`;
             const existingAccounts = await query(existingAccountsQuery);
 
+            const industryMapping = {
+                'information technology': 'Technology',
+                'financials': 'Banking',
+                'health care': 'Healthcare & Life Sciences',
+                'communication services': 'Communications',
+                'real estate': 'Retail', // Closest match or fallback
+                'utilities': 'Energy'    // Closest match
+            };
+            const normalizedIndustry = data.industry ? (industryMapping[data.industry.toLowerCase()] || data.industry) : undefined;
+
             const accountFields = {
-                Industry: data.industry ? data.industry.charAt(0).toUpperCase() + data.industry.slice(1) : undefined,
+                Industry: normalizedIndustry,
                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) || undefined : undefined,
                 Website: data.website,
                 GTCX_Credit_Rating__c: 'Good',
@@ -736,8 +746,18 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         
         // Update Account with any extra form data that might not have mapped
         if (accountId) {
+             const industryMapping = {
+                 'information technology': 'Technology',
+                 'financials': 'Banking',
+                 'health care': 'Healthcare & Life Sciences',
+                 'communication services': 'Communications',
+                 'real estate': 'Retail', 
+                 'utilities': 'Energy'
+             };
+             const normalizedIndustry = data.industry ? (industryMapping[data.industry.toLowerCase()] || data.industry) : undefined;
+
              await updateRecord('Account', accountId, {
-                 Industry: data.industry,
+                 Industry: normalizedIndustry,
                  NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined,
                  GTCX_Credit_Rating__c: 'Good',
                  BillingStreet: '203 Eversholt Street',
