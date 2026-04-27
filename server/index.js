@@ -781,7 +781,9 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             oppRecordTypeId = await getRecordTypeId('Opportunity', 'Regulated_Electricity');
         }
 
-        const customerSegment = (data.sites && data.sites.length > 1) ? 'I&C Multi Site' : 'I&C Single Site';
+        const customerSegment = data.customerSegment || (oppRecordTypeId === '012Dx000000GwvuIAC' 
+            ? (data.sites && data.sites.length > 1 ? 'I&C Multi Site' : 'I&C Single Site')
+            : (data.sites && data.sites.length > 1 ? 'SME Multi Site' : 'SME Single Site'));
 
         // Advanced Logic for GTCX Opportunity Fields
         let serviceType = 'Dual Fuel';
