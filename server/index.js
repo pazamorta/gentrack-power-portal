@@ -623,7 +623,6 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                         <urn:leadId>${data.leadId}</urn:leadId>
                         <urn:ownerId>${session.userId}</urn:ownerId>
                         <urn:doNotCreateOpportunity>true</urn:doNotCreateOpportunity>
-                        <urn:opportunityName>${data.companyName} - ${data.useCase || 'Energy'} Opportunity</urn:opportunityName>
                      </urn:leadConverts>
                   </urn:convertLead>
                </soapenv:Body>
