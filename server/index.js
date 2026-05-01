@@ -622,7 +622,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                         <urn:convertedStatus>${convertedStatus}</urn:convertedStatus>
                         <urn:leadId>${data.leadId}</urn:leadId>
                         <urn:ownerId>${session.userId}</urn:ownerId>
-                        <urn:doNotCreateOpportunity>false</urn:doNotCreateOpportunity>
+                        <urn:doNotCreateOpportunity>true</urn:doNotCreateOpportunity>
                         <urn:opportunityName>${data.companyName} - ${data.useCase || 'Energy'} Opportunity</urn:opportunityName>
                      </urn:leadConverts>
                   </urn:convertLead>
@@ -661,19 +661,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 console.log('✅ Lead Converted Successfully via SOAP!');
                 console.log('   Account:', accountId, 'Contact:', contactId, 'Opp:', opportunityId);
 
-                // FALLBACK: If Opportunity ID is missing from SOAP but Account was created, try to find it
-                if (!opportunityId && accountId) {
-                    console.log('⚠️ Opportunity ID missing from SOAP response. Attempting fallback query...');
-                    try {
-                        const oppQuery = await query(`SELECT Id FROM Opportunity WHERE AccountId = '${accountId}' ORDER BY CreatedDate DESC LIMIT 1`);
-                        if (oppQuery.totalSize > 0) {
-                            opportunityId = oppQuery.records[0].Id;
-                            console.log('   Found Opportunity via fallback query:', opportunityId);
-                        }
-                    } catch (oqErr) {
-                        console.error('   Fallback Opportunity query failed:', oqErr.message);
-                    }
-                }
+                // Intentionally skipping fallback query because we set doNotCreateOpportunity to true
             }
         }
         }
@@ -826,6 +814,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             GTCX_Customer_Segment__c: customerSegment,
             GTCX_Company_Registration_Number__c: data.companyNumber || undefined,
             LeadSource: 'Website',
+            GTCX_Pricing__c: 'Gorilla Pricing',
             
             // NEW GTCX Requirements
             GTCX_LOA_Level__c: 1,
