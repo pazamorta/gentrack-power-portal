@@ -669,7 +669,10 @@ app.post('/api/salesforce/invoice', async (req, res) => {
         if (!accountId) {
              // ... [Existing manual logic for Account/Contact creation] ...
              // Update Account Logic
-            const existingAccountsQuery = `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' LIMIT 1`;
+            const companyNumberSafe = data.companyNumber ? data.companyNumber.replace(/'/g, "\\'") : '';
+            const existingAccountsQuery = companyNumberSafe
+                ? `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' OR GTCX_CompanyRegistrationNumber__c = '${companyNumberSafe}' LIMIT 1`
+                : `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' LIMIT 1`;
             const existingAccounts = await query(existingAccountsQuery);
 
             const industryMapping = {
@@ -686,10 +689,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 Industry: normalizedIndustry,
                 NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) || undefined : undefined,
                 Website: data.website,
-                GTCX_Credit_Rating__c: 'Good',
-                BillingStreet: '203 Eversholt Street',
-                BillingCity: 'London',
-                BillingPostalCode: 'NW1 1BU.',
+                GTCX_Broker_Name__c: data.brokerName || undefined,
                 Description: `Created/Updated from Web Form on ${new Date().toISOString()}`
             };
 
@@ -746,13 +746,9 @@ app.post('/api/salesforce/invoice', async (req, res) => {
              await updateRecord('Account', accountId, {
                  Industry: normalizedIndustry,
                  NumberOfEmployees: data.companySize ? parseInt(data.companySize.split('-')[0]) : undefined,
-                 GTCX_Credit_Rating__c: 'Good',
-                 BillingStreet: '203 Eversholt Street',
-                 BillingCity: 'London',
-                 BillingPostalCode: 'NW1 1BU.',
                  GTCX_Legal_Name__c: data.companyName,
                  GTCX_Points_Of_Delivery_Count__c: data.sites?.length || 0,
-                 GTCX_Broker_Name__c: 'Easy Broker',
+                 GTCX_Broker_Name__c: data.brokerName || undefined,
                  GTCX_Credit_Score__c: 75
              });
         }
@@ -813,7 +809,7 @@ app.post('/api/salesforce/invoice', async (req, res) => {
             GTCX_Customer_Segment__c: customerSegment,
             GTCX_Company_Registration_Number__c: data.companyNumber || undefined,
             LeadSource: 'Website',
-            GTCX_Pricing__c: 'Gorilla Pricing',
+            GTCX_Pricing__c: 'G2 Pricing',
             
             // NEW GTCX Requirements
             GTCX_LOA_Level__c: 1,
@@ -897,18 +893,20 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 // Check if role already exists for this pair
                 const existingRoleQuery = await query(`SELECT Id FROM OpportunityContactRole WHERE OpportunityId = '${opportunityId}' AND ContactId = '${contactId}'`);
                 
+                const roleName = data.userType === 'tpi' ? 'TPI' : 'Business User';
+
                 if (existingRoleQuery.totalSize === 0) {
-                    console.log('Creating OpportunityContactRole (Role=TPI)...');
+                    console.log(`Creating OpportunityContactRole (Role=${roleName})...`);
                     await createRecord('OpportunityContactRole', {
                         OpportunityId: opportunityId,
                         ContactId: contactId,
-                        Role: 'TPI',
+                        Role: roleName,
                         IsPrimary: true
                     });
                 } else {
-                    console.log('Updating existing OpportunityContactRole to TPI...');
+                    console.log(`Updating existing OpportunityContactRole to ${roleName}...`);
                     await updateRecord('OpportunityContactRole', existingRoleQuery.records[0].Id, {
-                        Role: 'TPI'
+                        Role: roleName
                     });
                 }
             } catch (roleErr) {
@@ -991,30 +989,38 @@ app.post('/api/salesforce/invoice', async (req, res) => {
                 }
 
                 if (propertyId) {
-                    // Create Association Record (Property <-> Opportunity)
+                    // Create Association Record (Site)
                     try {
-                        const assocData = {
+                        const siteData = {
                             GTCX_Property__c: propertyId,
                             GTCX_Opportunity__c: opportunityId
                         };
                         
-                        if (site.startDate) assocData.GTCX_Start_Date__c = site.startDate;
-                        if (site.endDate) assocData.GTCX_End_Date__c = site.endDate;
-                        if (site.product) assocData.GTCX_Product__c = site.product;
+                        // Use provided dates or fallback to form's main contract dates
+                        siteData.GTCX_Start_Date__c = site.startDate || data.contractStartDate;
+                        
+                        if (site.endDate) {
+                            siteData.GTCX_End_Date__c = site.endDate;
+                        } else if (data.contractStartDate && data.contractLength) {
+                            // Automatically calculate end date if not provided in CSV
+                            siteData.GTCX_End_Date__c = estimatedEndDate;
+                        }
+
+                        if (site.product) siteData.GTCX_Product__c = site.product;
                         
                         const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
-                        if (!isNaN(marginValue)) assocData.GTCX_Margin_Value__c = marginValue;
+                        if (!isNaN(marginValue)) siteData.GTCX_Margin_Value__c = marginValue;
                         
                         const taxExemption = parseTaxExemption(site.taxExemption);
-                        if (taxExemption !== undefined) assocData.GTCX_Tax_Exemption__c = taxExemption;
+                        if (taxExemption !== undefined) siteData.GTCX_Tax_Exemption__c = taxExemption;
                         
                         const paymentTerm = site.paymentTerm ? parseInt(site.paymentTerm) : NaN;
-                        if (!isNaN(paymentTerm)) assocData.GTCX_Payment_Term__c = paymentTerm;
+                        if (!isNaN(paymentTerm)) siteData.GTCX_Payment_Term__c = paymentTerm;
 
-                        await createRecord('GTCX_Property_Opp_Association__c', assocData);
-                        console.log(`   Linked Property ${propertyId} to Opportunity via Association`);
+                        await createRecord('GTCX_Site__c', siteData);
+                        console.log(`   Linked Property ${propertyId} to Opportunity via GTCX_Site__c`);
                     } catch (assocErr) {
-                         console.error('   Failed to create Property Association:', assocErr.message);
+                         console.error('   Failed to create GTCX_Site__c:', assocErr.message);
                     }
 
                     if (site.meterPoints && site.meterPoints.length > 0) {

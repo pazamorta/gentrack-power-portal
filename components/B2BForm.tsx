@@ -17,6 +17,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   const [formData, setFormData] = useState({
     userType: 'company',
     tpiIdentifier: '',
+    brokerName: '',
     companyName: '',
     companyNumber: '',
     website: '',
@@ -318,6 +319,16 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    const validExtensions = ['.csv', '.xlsx', '.xls'];
+    const hasValidExtension = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    if (!hasValidExtension) {
+      setValidationError("Please upload a valid CSV or Excel file.");
+      return;
+    }
+    setValidationError(null);
+
+
     // SIMULATION: Good Energy Invoice Detection
     // If the file name contains "Good" or "Good Energy", we simulate the parsing
     if (file.name.toLowerCase().includes('good') || file.name.includes('1770211092461') || file.name.includes('1770211866247') || file.name.includes('1770213108076')) { // Using multiple IDs for robustness
@@ -438,6 +449,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 // companySize removed
                 userType: formData.userType,
                 tpiIdentifier: formData.tpiIdentifier,
+                brokerName: formData.brokerName,
                 
                 // Site Data
                 sites: mockInvoiceData.sites, // Use mock sites
@@ -583,7 +595,11 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
   };
 
   const handleNext = async () => {
-    if (!validateStep(currentStep)) return;
+    if (!validateStep(currentStep)) {
+      setValidationError("Please complete all mandatory fields.");
+      return;
+    }
+    setValidationError(null);
 
     // STEP 1: CREATE LEAD (Non-blocking)
     if (currentStep === 1) {
@@ -600,6 +616,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             website: formData.website,
             userType: formData.userType,
             tpiIdentifier: formData.tpiIdentifier,
+            brokerName: formData.brokerName,
             gdprConsent: formData.gdprConsent,
             fileContent: undefined as string | undefined, 
             fileName: undefined as string | undefined
@@ -680,6 +697,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 recordTypeId: formData.recordTypeId,
                 userType: formData.userType,
                 tpiIdentifier: formData.tpiIdentifier,
+                brokerName: formData.brokerName,
                 
                 contractStartDate: formData.contractStartDate,
                 contractLength: formData.contractLength,
@@ -965,21 +983,37 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
                 <div>
                   {formData.userType === 'tpi' && (
-                    <div className="mb-6">
-                      <label htmlFor="tpiIdentifier" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                        TPI Identifier *
-                      </label>
-                      <input
-                        type="text"
-                        id="tpiIdentifier"
-                        name="tpiIdentifier"
-                        required
-                        value={formData.tpiIdentifier}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border-2 border-gray-400 text-gray-900 placeholder-gray-500 focus:border-[#3ACDFA] focus:ring-2 focus:ring-[#3ACDFA]/20 font-medium' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
-                        placeholder="Enter your TPI Identifier"
-                      />
-                    </div>
+                    <>
+                      <div className="mb-6">
+                        <label htmlFor="tpiIdentifier" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                          TPI Identifier *
+                        </label>
+                        <input
+                          type="text"
+                          id="tpiIdentifier"
+                          name="tpiIdentifier"
+                          required
+                          value={formData.tpiIdentifier}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border-2 border-gray-400 text-gray-900 placeholder-gray-500 focus:border-[#3ACDFA] focus:ring-2 focus:ring-[#3ACDFA]/20 font-medium' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
+                          placeholder="Enter your TPI Identifier"
+                        />
+                      </div>
+                      <div className="mb-6">
+                        <label htmlFor="brokerName" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
+                          Broker Name
+                        </label>
+                        <input
+                          type="text"
+                          id="brokerName"
+                          name="brokerName"
+                          value={formData.brokerName}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-3 rounded-xl transition-colors focus:outline-none ${theme === 'light' ? 'bg-white border-2 border-gray-400 text-gray-900 placeholder-gray-500 focus:border-[#3ACDFA] focus:ring-2 focus:ring-[#3ACDFA]/20 font-medium' : 'bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-white/30'}`}
+                          placeholder="Enter broker name (optional)"
+                        />
+                      </div>
+                    </>
                   )}
 
                   <label htmlFor="companyName" className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
@@ -1652,19 +1686,38 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
             ) : <div />}
 
             {currentStep < 4 ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={handleNext}
-                  className="bg-[#00E599] hover:bg-[#00cc88] text-black px-6 md:px-8 py-3 rounded-full flex items-center justify-center font-medium transition-all"
-                  disabled={isSubmitting}
-                  icon={false}
-                >
-                  <div className="flex items-center flex-nowrap whitespace-nowrap">
-                    <span className="mr-2">Next</span>
-                    <ChevronRight className="w-5 h-5 flex-shrink-0" />
-                  </div>
-                </Button>
+                <div className="flex flex-col items-center gap-4">
+                  {validationError && (
+                    <div className="text-red-500 font-medium text-sm animate-fade-in bg-red-100/10 px-4 py-2 rounded border border-red-500/50">
+                      {validationError}
+                    </div>
+                  )}
+                  {currentStep === 3 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValidationError(null);
+                        handleNext();
+                      }}
+                      className="text-sm underline text-gray-500 hover:text-gray-300"
+                    >
+                      Skip providing address/sites for now
+                    </button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={handleNext}
+                    className="bg-[#00E599] hover:bg-[#00cc88] text-black px-6 md:px-8 py-3 rounded-full flex items-center justify-center font-medium transition-all"
+                    disabled={isSubmitting}
+                    icon={false}
+                  >
+                    <div className="flex items-center flex-nowrap whitespace-nowrap">
+                      <span className="mr-2">Next</span>
+                      <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                    </div>
+                  </Button>
+                </div>
             ) : (
                 <Button
                     type="submit"
