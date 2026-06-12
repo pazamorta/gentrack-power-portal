@@ -596,7 +596,11 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   const handleNext = async () => {
     if (!validateStep(currentStep)) {
-      setValidationError("Please complete all mandatory fields.");
+      if (currentStep === 1 && formData.userType === 'tpi' && !formData.letterOfAuthority) {
+        setValidationError("Letter of Authority is missing.");
+      } else {
+        setValidationError("Please complete all mandatory fields.");
+      }
       return;
     }
     setValidationError(null);
@@ -1131,7 +1135,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 {formData.userType === 'tpi' && (
                     <div className="mt-6 mb-2">
                         <label className={`block text-sm font-medium mb-2 ${theme === 'light' ? 'text-gray-900 font-bold' : 'text-gray-300'}`}>
-                            Letter of Authority (Upload)
+                            Letter of Authority (Upload) *
                         </label>
                         <input 
                             type="file" 
