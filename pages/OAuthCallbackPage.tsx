@@ -11,6 +11,7 @@ export const OAuthCallbackPage: React.FC = () => {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
     
     if (!code) {
       setStatus('error');
@@ -30,7 +31,8 @@ export const OAuthCallbackPage: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
              code,
-             redirect_uri: redirectUri 
+             redirect_uri: redirectUri,
+             state: state || undefined
           }),
         });
 
