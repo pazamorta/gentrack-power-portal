@@ -95,7 +95,7 @@ async function authenticate(envName = 'primary') {
     const username = process.env[`SALESFORCE_USERNAME${suffix}`];
     const password = process.env[`SALESFORCE_PASSWORD${suffix}`];
     const securityToken = process.env[`SALESFORCE_SECURITY_TOKEN${suffix}`] || '';
-    const cliAlias = process.env[envName === 'secondary' ? 'SALESFORCE_CLI_ALIAS_SECONDARY' : 'SALESFORCE_CLI_ALIAS_PRIMARY'] || (envName === 'secondary' ? 'Renaming' : 'DemoCX');
+    const cliAlias = process.env[envName === 'secondary' ? 'SALESFORCE_CLI_ALIAS_SECONDARY' : 'SALESFORCE_CLI_ALIAS_PRIMARY'] || (envName === 'secondary' ? 'DemoCX' : 'GTCX');
 
     console.log(`🔑 Authenticating Salesforce environment: ${envName} (CLI Alias: ${cliAlias})...`);
 
