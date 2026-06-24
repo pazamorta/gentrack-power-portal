@@ -88,8 +88,8 @@ async function authenticate(envName = 'primary') {
     }
 
     const suffix = envName === 'secondary' ? '_2' : '';
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`];
-    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`];
+    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
+    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`] || process.env.SALESFORCE_CLIENT_SECRET;
     const loginUrl = process.env[`SALESFORCE_LOGIN_URL${suffix}`] || 'https://login.salesforce.com';
     const refreshToken = process.env[`SALESFORCE_REFRESH_TOKEN${suffix}`];
     const username = process.env[`SALESFORCE_USERNAME${suffix}`];
@@ -281,7 +281,7 @@ app.get('/api/auth/url', (req, res) => {
         loginUrl = loginUrl.slice(0, -1);
     }
     
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`];
+    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
     const redirectUri = req.query.redirect_uri || 'http://localhost:3000/oauth/callback';
     
     if (!clientId) {
@@ -327,8 +327,8 @@ app.post('/api/auth/exchange', async (req, res) => {
     }
 
     const suffix = envName === 'secondary' ? '_2' : '';
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`];
-    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`];
+    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
+    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`] || process.env.SALESFORCE_CLIENT_SECRET;
     const loginUrl = process.env[`SALESFORCE_LOGIN_URL${suffix}`] || 'https://login.salesforce.com';
     
     console.log(`Using redirect_uri for [${envName}] exchange:`, originalRedirectUri);
