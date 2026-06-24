@@ -98,6 +98,7 @@ async function authenticate(envName = 'primary') {
     const cliAlias = process.env[envName === 'secondary' ? 'SALESFORCE_CLI_ALIAS_SECONDARY' : 'SALESFORCE_CLI_ALIAS_PRIMARY'] || (envName === 'secondary' ? 'DemoCX' : 'GTCX');
 
     console.log(`🔑 Authenticating Salesforce environment: ${envName} (CLI Alias: ${cliAlias})...`);
+    const errors = [];
 
     // Method 1: Refresh Token Flow (Recommended)
     if (refreshToken && clientId && clientSecret) {
@@ -130,11 +131,12 @@ async function authenticate(envName = 'primary') {
                 console.log(`✅ [${envName}] Authenticated with Salesforce (Refresh Token)`);
                 return salesforceSessions[envName];
             } else {
-                console.warn(`⚠️ [${envName}] Refresh Token authentication failed. Falling back...`);
                 const text = await response.text();
-                console.error(`Refresh Token Error for ${envName}:`, text);
+                errors.push(`Refresh Token Flow failed: ${text}`);
+                console.warn(`⚠️ [${envName}] Refresh Token authentication failed: ${text}`);
             }
         } catch (e) {
+            errors.push(`Refresh Token Flow network error: ${e.message}`);
             console.error(`[${envName}] Refresh Token Network Error:`, e);
         }
     }
@@ -169,11 +171,12 @@ async function authenticate(envName = 'primary') {
                 console.log(`✅ [${envName}] Authenticated with Salesforce (Password Flow)`);
                 return salesforceSessions[envName];
             } else {
-                console.warn(`⚠️ [${envName}] Password Flow failed. Falling back...`);
                 const text = await response.text();
-                console.error(`Password Flow Error for ${envName}:`, text);
+                errors.push(`Password Flow failed: ${text}`);
+                console.warn(`⚠️ [${envName}] Password Flow failed: ${text}`);
             }
         } catch (e) {
+            errors.push(`Password Flow network error: ${e.message}`);
             console.error(`[${envName}] Password Flow Network Error:`, e);
         }
     }
@@ -184,9 +187,11 @@ async function authenticate(envName = 'primary') {
     if (cliSession) {
         salesforceSessions[envName] = cliSession;
         return cliSession;
+    } else {
+        errors.push(`CLI Fallback failed (CLI not available or alias not configured)`);
     }
 
-    throw new Error(`Salesforce authentication failed for environment: ${envName}. No authentication method succeeded.`);
+    throw new Error(`Salesforce authentication failed for environment: ${envName}. Details:\n- ${errors.join('\n- ')}`);
 }
 
 /**
