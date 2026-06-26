@@ -49,9 +49,49 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Salesforce sessions cache
 let salesforceSessions = {
-    primary: null,
-    secondary: null
+    GTCX: null,
+    DemoCX: null
 };
+
+const SALESFORCE_ENVIRONMENTS = [
+    { name: 'GTCX', legacyName: 'primary', suffix: '', cliAliasEnv: 'SALESFORCE_CLI_ALIAS_PRIMARY', defaultCliAlias: 'GTCX' },
+    { name: 'DemoCX', legacyName: 'secondary', suffix: '_2', cliAliasEnv: 'SALESFORCE_CLI_ALIAS_SECONDARY', defaultCliAlias: 'DemoCX' }
+];
+
+function getSalesforceEnvironments() {
+    return SALESFORCE_ENVIRONMENTS;
+}
+
+function resolveSalesforceEnvironment(envName = 'GTCX') {
+    const normalized = String(envName || '').toLowerCase();
+    return SALESFORCE_ENVIRONMENTS.find(env =>
+        env.name.toLowerCase() === normalized ||
+        env.legacyName.toLowerCase() === normalized ||
+        env.defaultCliAlias.toLowerCase() === normalized
+    ) || SALESFORCE_ENVIRONMENTS[0];
+}
+
+function getSalesforceEnvVar(envConfig, key) {
+    const explicitPrefix = `SALESFORCE_${envConfig.name.toUpperCase()}_${key}`;
+    const legacyName = `SALESFORCE_${key}${envConfig.suffix}`;
+    return process.env[explicitPrefix] || process.env[legacyName] || (envConfig.suffix ? undefined : process.env[`SALESFORCE_${key}`]);
+}
+
+function parseSfdxAuthUrl(sfdxAuthUrl) {
+    const match = String(sfdxAuthUrl || '').match(/^force:\/\/([^:]+):([^:]*):([^@]+)@(.+)$/);
+    if (!match) {
+        throw new Error('Invalid SFDX auth URL format');
+    }
+
+    const [, clientId, clientSecret, refreshToken, instanceHost] = match;
+    const instanceUrl = instanceHost.startsWith('http') ? instanceHost : `https://${instanceHost}`;
+    return {
+        clientId: decodeURIComponent(clientId),
+        clientSecret: clientSecret ? decodeURIComponent(clientSecret) : '',
+        refreshToken: decodeURIComponent(refreshToken),
+        instanceUrl: instanceUrl.replace(/\/$/, '')
+    };
+}
 
 /**
  * Authenticate via Salesforce CLI (for local development fallback)
@@ -59,11 +99,27 @@ let salesforceSessions = {
 function authenticateViaCLI(alias) {
     try {
         console.log(`🔄 Attempting to authenticate via Salesforce CLI for alias: ${alias}...`);
-        const result = execSync(`sf org display -o ${alias} --json`, { encoding: 'utf8' });
+        // Set env var to support older/newer sf versions that might hide secrets
+        const env = { ...process.env, SF_TEMP_SHOW_SECRETS: 'true' };
+        const result = execSync(`sf org display -o ${alias} --json`, { encoding: 'utf8', env });
         const parsed = JSON.parse(result);
         if (parsed && parsed.status === 0 && parsed.result) {
-            const { accessToken, instanceUrl, id } = parsed.result;
+            let { accessToken, instanceUrl, id } = parsed.result;
             const userId = id ? id.split('/').pop() : null;
+
+            // If token is redacted, retrieve it explicitly via show-access-token
+            if (!accessToken || accessToken.includes('REDACTED')) {
+                try {
+                    const tokenResult = execSync(`sf org auth show-access-token -o ${alias} --json`, { encoding: 'utf8', env });
+                    const tokenParsed = JSON.parse(tokenResult);
+                    if (tokenParsed && tokenParsed.status === 0 && tokenParsed.result) {
+                        accessToken = tokenParsed.result.accessToken;
+                    }
+                } catch (tokError) {
+                    console.warn(`⚠️ Failed to fetch token via show-access-token for alias: ${alias}: ${tokError.message}`);
+                }
+            }
+
             console.log(`✅ Authenticated via CLI for alias: ${alias}`);
             return {
                 accessToken,
@@ -81,29 +137,83 @@ function authenticateViaCLI(alias) {
 /**
  * Authenticate with Salesforce for a given environment
  */
-async function authenticate(envName = 'primary') {
+async function authenticate(envName = 'GTCX') {
+    const envConfig = resolveSalesforceEnvironment(envName);
+    const sessionKey = envConfig.name;
+
     // Check if we have a valid cached session
-    if (salesforceSessions[envName] && salesforceSessions[envName].expiresAt > Date.now()) {
-        return salesforceSessions[envName];
+    if (salesforceSessions[sessionKey] && salesforceSessions[sessionKey].expiresAt > Date.now()) {
+        return salesforceSessions[sessionKey];
     }
 
-    const suffix = envName === 'secondary' ? '_2' : '';
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
-    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`] || process.env.SALESFORCE_CLIENT_SECRET;
-    const loginUrl = process.env[`SALESFORCE_LOGIN_URL${suffix}`] || 'https://login.salesforce.com';
-    const refreshToken = process.env[`SALESFORCE_REFRESH_TOKEN${suffix}`];
-    const username = process.env[`SALESFORCE_USERNAME${suffix}`];
-    const password = process.env[`SALESFORCE_PASSWORD${suffix}`];
-    const securityToken = process.env[`SALESFORCE_SECURITY_TOKEN${suffix}`] || '';
-    const cliAlias = process.env[envName === 'secondary' ? 'SALESFORCE_CLI_ALIAS_SECONDARY' : 'SALESFORCE_CLI_ALIAS_PRIMARY'] || (envName === 'secondary' ? 'DemoCX' : 'GTCX');
+    const clientId = getSalesforceEnvVar(envConfig, 'CLIENT_ID');
+    const clientSecret = getSalesforceEnvVar(envConfig, 'CLIENT_SECRET');
+    const loginUrl = getSalesforceEnvVar(envConfig, 'LOGIN_URL') || 'https://login.salesforce.com';
+    const refreshToken = getSalesforceEnvVar(envConfig, 'REFRESH_TOKEN');
+    const username = getSalesforceEnvVar(envConfig, 'USERNAME');
+    const password = getSalesforceEnvVar(envConfig, 'PASSWORD');
+    const securityToken = getSalesforceEnvVar(envConfig, 'SECURITY_TOKEN') || '';
+    const sfdxAuthUrl = getSalesforceEnvVar(envConfig, 'SFDX_AUTH_URL');
+    const cliAlias = process.env[`SALESFORCE_${envConfig.name.toUpperCase()}_CLI_ALIAS`] || process.env[envConfig.cliAliasEnv] || envConfig.defaultCliAlias;
+    const authMethods = (process.env.SALESFORCE_AUTH_METHODS || 'sfdx,refresh,password,cli')
+        .split(',')
+        .map(method => method.trim().toLowerCase())
+        .filter(Boolean);
 
-    console.log(`🔑 Authenticating Salesforce environment: ${envName} (CLI Alias: ${cliAlias})...`);
+    console.log(`🔑 Authenticating Salesforce environment: ${envConfig.name} (CLI Alias: ${cliAlias})...`);
     const errors = [];
 
-    // Method 1: Refresh Token Flow (Recommended)
-    if (refreshToken && clientId && clientSecret) {
+    // Method 0: SFDX Auth URL (best for hosted deployments using sf CLI auth material)
+    if (authMethods.includes('sfdx') && sfdxAuthUrl) {
         try {
-            console.log(`🔄 [${envName}] Authenticating via Refresh Token...`);
+            console.log(`🔄 [${envConfig.name}] Authenticating via SFDX Auth URL...`);
+            const sfdxAuth = parseSfdxAuthUrl(sfdxAuthUrl);
+            const params = new URLSearchParams({
+                grant_type: 'refresh_token',
+                client_id: sfdxAuth.clientId,
+                refresh_token: sfdxAuth.refreshToken
+            });
+
+            if (sfdxAuth.clientSecret) {
+                params.set('client_secret', sfdxAuth.clientSecret);
+            }
+
+            const response = await fetch(`${sfdxAuth.instanceUrl}/services/oauth2/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString(),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const identityUrl = data.id;
+                const userId = identityUrl ? identityUrl.split('/').pop() : null;
+
+                salesforceSessions[sessionKey] = {
+                    accessToken: data.access_token,
+                    instanceUrl: data.instance_url || sfdxAuth.instanceUrl,
+                    userId,
+                    expiresAt: Date.now() + 90 * 60 * 1000,
+                };
+                console.log(`✅ [${envConfig.name}] Authenticated with Salesforce (SFDX Auth URL)`);
+                return salesforceSessions[sessionKey];
+            } else {
+                const text = await response.text();
+                errors.push(`SFDX Auth URL Flow failed: ${text}`);
+                console.warn(`⚠️ [${envConfig.name}] SFDX Auth URL authentication failed: ${text}`);
+            }
+        } catch (e) {
+            errors.push(`SFDX Auth URL Flow error: ${e.message}`);
+            console.error(`[${envConfig.name}] SFDX Auth URL Error:`, e);
+        }
+    } else if (!authMethods.includes('sfdx')) {
+        errors.push('SFDX Auth URL Flow skipped by SALESFORCE_AUTH_METHODS');
+    }
+
+    // Method 1: Refresh Token Flow (Recommended)
+    if (authMethods.includes('refresh') && refreshToken && clientId && clientSecret) {
+        try {
+            console.log(`🔄 [${envConfig.name}] Authenticating via Refresh Token...`);
             const params = new URLSearchParams({
                 grant_type: 'refresh_token',
                 client_id: clientId,
@@ -122,29 +232,31 @@ async function authenticate(envName = 'primary') {
                 const identityUrl = data.id;
                 const userId = identityUrl ? identityUrl.split('/').pop() : null;
 
-                salesforceSessions[envName] = {
+                salesforceSessions[sessionKey] = {
                     accessToken: data.access_token,
                     instanceUrl: data.instance_url,
                     userId: userId,
                     expiresAt: Date.now() + 90 * 60 * 1000, // 90 minutes
                 };
-                console.log(`✅ [${envName}] Authenticated with Salesforce (Refresh Token)`);
-                return salesforceSessions[envName];
+                console.log(`✅ [${envConfig.name}] Authenticated with Salesforce (Refresh Token)`);
+                return salesforceSessions[sessionKey];
             } else {
                 const text = await response.text();
                 errors.push(`Refresh Token Flow failed: ${text}`);
-                console.warn(`⚠️ [${envName}] Refresh Token authentication failed: ${text}`);
+                console.warn(`⚠️ [${envConfig.name}] Refresh Token authentication failed: ${text}`);
             }
         } catch (e) {
             errors.push(`Refresh Token Flow network error: ${e.message}`);
-            console.error(`[${envName}] Refresh Token Network Error:`, e);
+            console.error(`[${envConfig.name}] Refresh Token Network Error:`, e);
         }
+    } else if (!authMethods.includes('refresh')) {
+        errors.push('Refresh Token Flow skipped by SALESFORCE_AUTH_METHODS');
     }
 
     // Method 2: Password Flow (Legacy/Fallback)
-    if (username && password && clientId && clientSecret) {
+    if (authMethods.includes('password') && username && password && clientId && clientSecret) {
         try {
-            console.log(`🔄 [${envName}] Authenticating via Password Flow...`);
+            console.log(`🔄 [${envConfig.name}] Authenticating via Password Flow...`);
             const params = new URLSearchParams({
                 grant_type: 'password',
                 client_id: clientId,
@@ -163,41 +275,48 @@ async function authenticate(envName = 'primary') {
 
             if (response.ok) {
                 const data = await response.json();
-                salesforceSessions[envName] = {
+                salesforceSessions[sessionKey] = {
                     accessToken: data.access_token,
                     instanceUrl: data.instance_url,
                     expiresAt: Date.now() + 90 * 60 * 1000, // 90 minutes
                 };
-                console.log(`✅ [${envName}] Authenticated with Salesforce (Password Flow)`);
-                return salesforceSessions[envName];
+                console.log(`✅ [${envConfig.name}] Authenticated with Salesforce (Password Flow)`);
+                return salesforceSessions[sessionKey];
             } else {
                 const text = await response.text();
                 errors.push(`Password Flow failed: ${text}`);
-                console.warn(`⚠️ [${envName}] Password Flow failed: ${text}`);
+                console.warn(`⚠️ [${envConfig.name}] Password Flow failed: ${text}`);
             }
         } catch (e) {
             errors.push(`Password Flow network error: ${e.message}`);
-            console.error(`[${envName}] Password Flow Network Error:`, e);
+            console.error(`[${envConfig.name}] Password Flow Network Error:`, e);
         }
+    } else if (!authMethods.includes('password')) {
+        errors.push('Password Flow skipped by SALESFORCE_AUTH_METHODS');
     }
 
     // Method 3: CLI Fallback (Development Only)
-    console.log(`🔄 [${envName}] Falling back to Salesforce CLI authentication...`);
-    const cliSession = authenticateViaCLI(cliAlias);
-    if (cliSession) {
-        salesforceSessions[envName] = cliSession;
-        return cliSession;
+    if (authMethods.includes('cli')) {
+        console.log(`🔄 [${envConfig.name}] Falling back to Salesforce CLI authentication...`);
+        const cliSession = authenticateViaCLI(cliAlias);
+        if (cliSession) {
+            salesforceSessions[sessionKey] = cliSession;
+            return cliSession;
+        } else {
+            errors.push(`CLI Fallback failed for alias ${cliAlias} (CLI not available or alias not configured)`);
+        }
     } else {
-        errors.push(`CLI Fallback failed (CLI not available or alias not configured)`);
+        errors.push('CLI Fallback skipped by SALESFORCE_AUTH_METHODS');
     }
 
-    throw new Error(`Salesforce authentication failed for environment: ${envName}. Details:\n- ${errors.join('\n- ')}`);
+    throw new Error(`Salesforce authentication failed for environment: ${envConfig.name}. Details:\n- ${errors.join('\n- ')}`);
 }
 
 /**
  * Make an authenticated request to Salesforce REST API
  */
-async function salesforceRequest(endpoint, options = {}, envName = 'primary') {
+async function salesforceRequest(endpoint, options = {}, envName = 'GTCX') {
+    const envConfig = resolveSalesforceEnvironment(envName);
     const session = await authenticate(envName);
 
     const url = `${session.instanceUrl}${endpoint}`;
@@ -215,7 +334,7 @@ async function salesforceRequest(endpoint, options = {}, envName = 'primary') {
 
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Salesforce API error on [${envName}]: ${response.status} - ${errorText}`);
+        throw new Error(`Salesforce API error on [${envConfig.name}]: ${response.status} - ${errorText}`);
     }
 
     // Handle empty responses (like PATCH requests)
@@ -229,7 +348,7 @@ async function salesforceRequest(endpoint, options = {}, envName = 'primary') {
 /**
  * Query Salesforce using SOQL
  */
-async function query(soql, envName = 'primary') {
+async function query(soql, envName = 'GTCX') {
     const encodedQuery = encodeURIComponent(soql);
     return salesforceRequest(`/services/data/v59.0/query?q=${encodedQuery}`, {}, envName);
 }
@@ -237,7 +356,7 @@ async function query(soql, envName = 'primary') {
 /**
  * Create a Salesforce record
  */
-async function createRecord(objectType, data, envName = 'primary') {
+async function createRecord(objectType, data, envName = 'GTCX') {
     return salesforceRequest(
         `/services/data/v59.0/sobjects/${objectType}`,
         {
@@ -251,7 +370,7 @@ async function createRecord(objectType, data, envName = 'primary') {
 /**
  * Update a Salesforce record
  */
-async function updateRecord(objectType, id, data, envName = 'primary') {
+async function updateRecord(objectType, id, data, envName = 'GTCX') {
     return salesforceRequest(
         `/services/data/v59.0/sobjects/${objectType}/${id}`,
         {
@@ -278,19 +397,19 @@ app.get('/api/health', (req, res) => {
  * GET /api/auth/url
  */
 app.get('/api/auth/url', (req, res) => {
-    const envName = req.query.env || 'primary';
-    const suffix = envName === 'secondary' ? '_2' : '';
-    let loginUrl = process.env[`SALESFORCE_LOGIN_URL${suffix}`] || 'https://login.salesforce.com';
+    const envConfig = resolveSalesforceEnvironment(req.query.env || 'GTCX');
+    const envName = envConfig.name;
+    let loginUrl = getSalesforceEnvVar(envConfig, 'LOGIN_URL') || 'https://login.salesforce.com';
     // Remove trailing slash if present
     if (loginUrl.endsWith('/')) {
         loginUrl = loginUrl.slice(0, -1);
     }
     
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
+    const clientId = getSalesforceEnvVar(envConfig, 'CLIENT_ID');
     const redirectUri = req.query.redirect_uri || 'http://localhost:3000/oauth/callback';
     
     if (!clientId) {
-        return res.status(500).json({ error: `Missing SALESFORCE_CLIENT_ID${suffix} env var` });
+        return res.status(500).json({ error: `Missing Salesforce client ID for ${envName}` });
     }
 
     // Pass env in state parameter to retrieve it in callback
@@ -318,7 +437,7 @@ app.post('/api/auth/exchange', async (req, res) => {
     }
 
     // Decode state to get env Name
-    let envName = 'primary';
+    let envName = 'GTCX';
     let originalRedirectUri = redirect_uri || 'http://localhost:3000/oauth/callback';
     if (state) {
         try {
@@ -331,10 +450,11 @@ app.post('/api/auth/exchange', async (req, res) => {
         }
     }
 
-    const suffix = envName === 'secondary' ? '_2' : '';
-    const clientId = process.env[`SALESFORCE_CLIENT_ID${suffix}`] || process.env.SALESFORCE_CLIENT_ID;
-    const clientSecret = process.env[`SALESFORCE_CLIENT_SECRET${suffix}`] || process.env.SALESFORCE_CLIENT_SECRET;
-    const loginUrl = process.env[`SALESFORCE_LOGIN_URL${suffix}`] || 'https://login.salesforce.com';
+    const envConfig = resolveSalesforceEnvironment(envName);
+    envName = envConfig.name;
+    const clientId = getSalesforceEnvVar(envConfig, 'CLIENT_ID');
+    const clientSecret = getSalesforceEnvVar(envConfig, 'CLIENT_SECRET');
+    const loginUrl = getSalesforceEnvVar(envConfig, 'LOGIN_URL') || 'https://login.salesforce.com';
     
     console.log(`Using redirect_uri for [${envName}] exchange:`, originalRedirectUri);
 
@@ -372,11 +492,11 @@ app.post('/api/auth/exchange', async (req, res) => {
         if (data.refresh_token) {
             console.log('\n===============================================================');
             console.log(`🔐 NEW REFRESH TOKEN OBTAINED FOR [${envName}]`);
-            console.log(`Copy this to your .env/Render env vars as SALESFORCE_REFRESH_TOKEN${suffix}:`);
+            console.log(`Copy this to your .env/Render env vars as SALESFORCE_${envName.toUpperCase()}_REFRESH_TOKEN:`);
             console.log(data.refresh_token);
             console.log('===============================================================\n');
             
-            process.env[`SALESFORCE_REFRESH_TOKEN${suffix}`] = data.refresh_token;
+            process.env[`SALESFORCE_${envName.toUpperCase()}_REFRESH_TOKEN`] = data.refresh_token;
         }
 
         res.json({ 
@@ -398,7 +518,7 @@ app.post('/api/auth/exchange', async (req, res) => {
 /**
  * Helper to get RecordTypeId by DeveloperName
  */
-async function getRecordTypeId(sobjectType, developerName, envName = 'primary') {
+async function getRecordTypeId(sobjectType, developerName, envName = 'GTCX') {
     try {
         const queryStr = `SELECT Id FROM RecordType WHERE SobjectType = '${sobjectType}' AND DeveloperName = '${developerName}' LIMIT 1`;
         const result = await query(queryStr, envName);
@@ -420,8 +540,11 @@ async function createLeadInEnv(data, envName) {
     try {
         console.log(`📥 [${envName}] Creating Lead:`, data.companyName);
 
-        // Fetch RecordTypeId for GTCX_B2B_Lead
-        const recordTypeId = await getRecordTypeId('Lead', 'GTCX_B2B_Lead', envName);
+        // Fetch RecordTypeId for GTCX_B2B_Lead, fall back to B2B_Lead
+        let recordTypeId = await getRecordTypeId('Lead', 'GTCX_B2B_Lead', envName);
+        if (!recordTypeId) {
+            recordTypeId = await getRecordTypeId('Lead', 'B2B_Lead', envName);
+        }
 
         // Map form fields to Salesforce Lead fields
         const leadData = {
@@ -536,27 +659,30 @@ async function createLeadInEnv(data, envName) {
 app.post('/api/salesforce/lead', async (req, res) => {
     try {
         const data = req.body;
-        console.log('📥 Received Lead request. Processing on dual environments...');
+        const environments = getSalesforceEnvironments();
+        console.log(`📥 Received Lead request. Processing on ${environments.map(env => env.name).join(' and ')}...`);
 
-        const [primaryResult, secondaryResult] = await Promise.all([
-            createLeadInEnv(data, 'primary'),
-            createLeadInEnv(data, 'secondary')
+        const [gtcxResult, democxResult] = await Promise.all([
+            createLeadInEnv(data, 'GTCX'),
+            createLeadInEnv(data, 'DemoCX')
         ]);
 
-        if (!primaryResult.success && !secondaryResult.success) {
+        if (!gtcxResult.success && !democxResult.success) {
             return res.status(500).json({
                 success: false,
-                error: `Both Salesforce environments failed. Primary error: ${primaryResult.error}. Secondary error: ${secondaryResult.error}`
+                error: `Both Salesforce environments failed. GTCX error: ${gtcxResult.error}. DemoCX error: ${democxResult.error}`
             });
         }
 
         res.json({
             success: true,
-            primary: primaryResult,
-            secondary: secondaryResult,
-            leadId: primaryResult.leadId || secondaryResult.leadId,
-            contentDocumentId: primaryResult.contentDocumentId || secondaryResult.contentDocumentId,
-            message: 'Lead creation processed on dual environments'
+            GTCX: gtcxResult,
+            DemoCX: democxResult,
+            primary: gtcxResult,
+            secondary: democxResult,
+            leadId: gtcxResult.leadId || democxResult.leadId,
+            contentDocumentId: gtcxResult.contentDocumentId || democxResult.contentDocumentId,
+            message: 'Lead creation processed on GTCX and DemoCX'
         });
     } catch (error) {
         console.error('❌ Dual lead creation error:', error);
@@ -730,7 +856,7 @@ async function processInvoiceInEnv(data, envName) {
         if (!accountId) {
             const companyNumberSafe = data.companyNumber ? data.companyNumber.replace(/'/g, "\\'") : '';
             const existingAccountsQuery = companyNumberSafe
-                ? `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' OR GTCX_CompanyRegistrationNumber__c = '${companyNumberSafe}' LIMIT 1`
+                ? `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' OR GTCX_Company_Registration_Number__c = '${companyNumberSafe}' LIMIT 1`
                 : `SELECT Id FROM Account WHERE Name = '${data.companyName.replace(/'/g, "\\'")}' LIMIT 1`;
             const existingAccounts = await query(existingAccountsQuery, envName);
 
@@ -1176,26 +1302,29 @@ async function processInvoiceInEnv(data, envName) {
 app.post('/api/salesforce/invoice', async (req, res) => {
     try {
         const data = req.body;
-        console.log('[POST] /api/salesforce/invoice - Processing on dual environments');
+        const environments = getSalesforceEnvironments();
+        console.log(`[POST] /api/salesforce/invoice - Processing on ${environments.map(env => env.name).join(' and ')}`);
 
-        const [primaryResult, secondaryResult] = await Promise.all([
-            processInvoiceInEnv(data, 'primary'),
-            processInvoiceInEnv(data, 'secondary')
+        const [gtcxResult, democxResult] = await Promise.all([
+            processInvoiceInEnv(data, 'GTCX'),
+            processInvoiceInEnv(data, 'DemoCX')
         ]);
 
-        if (!primaryResult.success && !secondaryResult.success) {
+        if (!gtcxResult.success && !democxResult.success) {
             return res.status(500).json({
                 success: false,
-                error: `Both Salesforce environments failed. Primary error: ${primaryResult.error}. Secondary error: ${secondaryResult.error}`
+                error: `Both Salesforce environments failed. GTCX error: ${gtcxResult.error}. DemoCX error: ${democxResult.error}`
             });
         }
 
         res.json({
             success: true,
-            primary: primaryResult,
-            secondary: secondaryResult,
-            message: 'Application processed successfully on dual environments',
-            records: primaryResult.success ? primaryResult.records : secondaryResult.records
+            GTCX: gtcxResult,
+            DemoCX: democxResult,
+            primary: gtcxResult,
+            secondary: democxResult,
+            message: 'Application processed successfully on GTCX and DemoCX',
+            records: gtcxResult.success ? gtcxResult.records : democxResult.records
         });
 
     } catch (error) {
@@ -1213,13 +1342,13 @@ app.post('/api/salesforce/invoice', async (req, res) => {
  */
 app.post('/api/salesforce/query', async (req, res) => {
     try {
-        const { soql } = req.body;
+        const { soql, env } = req.body;
         
         if (!soql) {
             return res.status(400).json({ error: 'SOQL query is required' });
         }
 
-        const result = await query(soql);
+        const result = await query(soql, env || 'GTCX');
         res.json(result);
     } catch (error) {
         console.error('Query error:', error);
@@ -1340,4 +1469,3 @@ app.listen(PORT, () => {
     console.log(`🚀 Salesforce proxy server running on http://localhost:${PORT}`);
     console.log(`📡 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
 });
-
