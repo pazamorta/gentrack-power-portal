@@ -1055,6 +1055,8 @@ async function processInvoiceInEnv(data, envName) {
             return date.toISOString().split('T')[0];
         };
         const estimatedEndDate = calculateEndDate(data.contractStartDate, data.contractLength);
+        const defaultSiteStartDate = data.contractStartDate || new Date().toISOString().split('T')[0];
+        const defaultSiteEndDate = estimatedEndDate || calculateEndDate(defaultSiteStartDate, data.contractLength || '12');
 
         const totalVolumeMWh = data.sites?.reduce((acc, site) => {
             const siteVolume = site.meterPoints?.reduce((sAcc, mp) => {
@@ -1291,11 +1293,11 @@ async function processInvoiceInEnv(data, envName) {
                                 setIfValue(siteData, siteObjectMapping.site.property, propertyId);
                                 setIfValue(siteData, siteObjectMapping.site.opportunity, opportunityId);
                                 setIfValue(siteData, siteObjectMapping.site.servicePoint, servicePointId);
-                                setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || data.contractStartDate);
+                                setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || defaultSiteStartDate);
                                 if (site.endDate) {
                                     setIfValue(siteData, siteObjectMapping.site.endDate, site.endDate);
-                                } else if (data.contractStartDate && data.contractLength) {
-                                    setIfValue(siteData, siteObjectMapping.site.endDate, estimatedEndDate);
+                                } else {
+                                    setIfValue(siteData, siteObjectMapping.site.endDate, defaultSiteEndDate);
                                 }
                                 setIfValue(siteData, siteObjectMapping.site.product, site.product);
                                 const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
@@ -1319,11 +1321,11 @@ async function processInvoiceInEnv(data, envName) {
                             setIfValue(siteData, siteObjectMapping.site.account, propertyAccountId || accountId);
                             setIfValue(siteData, siteObjectMapping.site.property, propertyId);
                             setIfValue(siteData, siteObjectMapping.site.opportunity, opportunityId);
-                            setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || data.contractStartDate);
+                            setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || defaultSiteStartDate);
                             if (site.endDate) {
                                 setIfValue(siteData, siteObjectMapping.site.endDate, site.endDate);
-                            } else if (data.contractStartDate && data.contractLength) {
-                                setIfValue(siteData, siteObjectMapping.site.endDate, estimatedEndDate);
+                            } else {
+                                setIfValue(siteData, siteObjectMapping.site.endDate, defaultSiteEndDate);
                             }
                             setIfValue(siteData, siteObjectMapping.site.product, site.product);
                             const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
