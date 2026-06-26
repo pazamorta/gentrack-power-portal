@@ -741,6 +741,8 @@ async function processInvoiceInEnv(data, envName) {
         let contactId;
         let opportunityId = null;
         let stageName = (data.sites && data.sites.length > 0) ? 'Qualification' : 'Qualification';
+        const envConfig = resolveSalesforceEnvironment(envName);
+        const leadId = data.leadIds?.[envConfig.name] || data.leadIds?.[envConfig.legacyName] || data.leadId;
 
         // Helper to get converted status
         const getConvertedStatus = async () => {
@@ -757,12 +759,12 @@ async function processInvoiceInEnv(data, envName) {
 
         // 1. LEAD CONVERSION FLOW
         // If TPI, we do NOT convert the lead, we just update it and attach files.
-        if (data.leadId && data.userType !== 'tpi') {
-            console.log(`🔄 [${envName}] Starting Standard Lead Conversion for:`, data.leadId);
+        if (leadId && data.userType !== 'tpi') {
+            console.log(`🔄 [${envName}] Starting Standard Lead Conversion for:`, leadId);
 
             // A. Update Lead first with latest form data to ensure mapping is accurate
             try {
-                await updateRecord('Lead', data.leadId, {
+                await updateRecord('Lead', leadId, {
                     Company: data.companyName,
                     FirstName: data.contactName ? data.contactName.split(' ')[0] : (data.contactFirstName || undefined),
                     LastName: data.contactName ? data.contactName.split(' ').slice(1).join(' ') : (data.contactLastName || undefined),
@@ -782,7 +784,7 @@ async function processInvoiceInEnv(data, envName) {
             // CHECK IF ALREADY CONVERTED
             let isAlreadyConverted = false;
             try {
-                const leadStatusQuery = await query(`SELECT IsConverted, ConvertedAccountId, ConvertedContactId, ConvertedOpportunityId FROM Lead WHERE Id = '${data.leadId}'`, envName);
+                const leadStatusQuery = await query(`SELECT IsConverted, ConvertedAccountId, ConvertedContactId, ConvertedOpportunityId FROM Lead WHERE Id = '${leadId}'`, envName);
                 if (leadStatusQuery.totalSize > 0 && leadStatusQuery.records[0].IsConverted) {
                     console.log(`ℹ️ [${envName}] Lead is ALREADY CONVERTED. Skipping SOAP Conversion.`);
                     const convertedLead = leadStatusQuery.records[0];
@@ -814,7 +816,7 @@ async function processInvoiceInEnv(data, envName) {
                       <urn:convertLead>
                          <urn:leadConverts>
                             <urn:convertedStatus>${convertedStatus}</urn:convertedStatus>
-                            <urn:leadId>${data.leadId}</urn:leadId>
+                            <urn:leadId>${leadId}</urn:leadId>
                             <urn:ownerId>${session.userId || ''}</urn:ownerId>
                             <urn:doNotCreateOpportunity>true</urn:doNotCreateOpportunity>
                          </urn:leadConverts>
@@ -1218,8 +1220,8 @@ async function processInvoiceInEnv(data, envName) {
         
         // File Upload
         let fileId;
-        if (data.fileContent && data.fileName && (accountId || opportunityId || data.leadId)) {
-            const firstPublishLocationId = accountId || opportunityId || data.leadId;
+        if (data.fileContent && data.fileName && (accountId || opportunityId || leadId)) {
+            const firstPublishLocationId = accountId || opportunityId || leadId;
             try {
                 const contentVersionResult = await createRecord('ContentVersion', {
                     Title: data.fileName,

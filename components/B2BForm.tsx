@@ -69,7 +69,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
 
   // Ref to track async operations
   const promises = React.useRef<{
-      lead: Promise<{ leadId?: string }> | null;
+      lead: Promise<{ leadId?: string; GTCX?: { leadId?: string }; DemoCX?: { leadId?: string }; primary?: { leadId?: string }; secondary?: { leadId?: string } }> | null;
       opportunity: Promise<any> | null;
   }>({
       lead: null,
@@ -426,9 +426,14 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
              }
              
              let leadId = '';
+             let leadIds: Record<string, string | undefined> = {};
              try {
                  const leadResult = await promises.current.lead;
                  leadId = leadResult?.leadId || '';
+                 leadIds = {
+                    GTCX: leadResult?.GTCX?.leadId || leadResult?.primary?.leadId,
+                    DemoCX: leadResult?.DemoCX?.leadId || leadResult?.secondary?.leadId
+                 };
              } catch (e) {
                  console.warn("Simulation: Could not get Lead ID", e);
              }
@@ -445,6 +450,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 
                 // Form Fields
                 leadId: leadId, 
+                leadIds,
                 industry: formData.industry,
                 // companySize removed
                 userType: formData.userType,
@@ -681,6 +687,10 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
              const leadResult = await promises.current.lead;
              const leadId = leadResult.leadId;
              if (!leadId) throw new Error("No Lead ID available from previous step.");
+             const leadIds = {
+                GTCX: leadResult.GTCX?.leadId || leadResult.primary?.leadId,
+                DemoCX: leadResult.DemoCX?.leadId || leadResult.secondary?.leadId
+             };
 
              // Prepare payload
              const conversionPayload: ParsedInvoiceData = {
@@ -694,6 +704,7 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
                 
                 // Form Fields
                 leadId: leadId, // Use the resolved ID
+                leadIds,
                 industry: formData.industry,
                 // companySize removed
                 // Removed fields
@@ -1762,4 +1773,3 @@ export const B2BForm: React.FC<B2BFormProps> = ({ theme = 'dark', variant = 'def
     </div>
   );
 };
-

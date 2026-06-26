@@ -79,6 +79,7 @@ export interface ParsedInvoiceData {
     
     // Additional fields for full conversion
     leadId?: string;
+    leadIds?: Record<string, string | undefined>;
     industry?: string;
 
     companySize?: string;
@@ -148,7 +149,7 @@ export const salesforceService = {
     /**
      * Create a Lead in Salesforce
      */
-    createLead: async (data: any): Promise<{ success: boolean; leadId?: string; message?: string }> => {
+    createLead: async (data: any): Promise<{ success: boolean; leadId?: string; message?: string; GTCX?: { leadId?: string }; DemoCX?: { leadId?: string }; primary?: { leadId?: string }; secondary?: { leadId?: string } }> => {
         try {
             const response = await fetch(`${API_URL}/api/salesforce/lead`, {
                 method: 'POST',
