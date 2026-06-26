@@ -77,6 +77,95 @@ function getSalesforceEnvVar(envConfig, key) {
     return process.env[explicitPrefix] || process.env[legacyName] || (envConfig.suffix ? undefined : process.env[`SALESFORCE_${key}`]);
 }
 
+function getSiteObjectMapping(envName = 'GTCX') {
+    const envConfig = resolveSalesforceEnvironment(envName);
+    if (envConfig.name === 'DemoCX') {
+        return {
+            propertyObject: 'Property__c',
+            servicePointObject: 'Service_Point__c',
+            siteObject: 'Site__c',
+            property: {
+                account: 'Account__c',
+                addressStreet: 'Address__Street__s',
+                addressCity: 'Address__City__s',
+                addressCountryCode: 'Address__CountryCode__s',
+                addressPostalCode: 'Address__PostalCode__s',
+                type: 'Type__c'
+            },
+            servicePoint: {
+                marketIdentifier: 'Market_Identifier__c',
+                serviceType: 'Service_Type__c',
+                property: 'Property__c',
+                annualConsumption: 'Annual_Consumption__c',
+                productPreference: 'Product_Preference__c',
+                durationOptions: 'Duration_Options__c',
+                contactName: 'Contact_Name__c',
+                contactEmail: 'Contact_Email__c',
+                contactPhone: 'Contact_Phone__c',
+                companyNumber: 'Company_Number__c',
+                supplyStatus: 'Supply_Status__c',
+                opportunity: 'Opportunity__c'
+            },
+            site: {
+                account: 'Account__c',
+                property: 'Property__c',
+                opportunity: 'Opportunity__c',
+                servicePoint: 'Service_Point__c',
+                startDate: 'Start_Date__c',
+                endDate: 'End_Date__c',
+                product: 'Product__c',
+                marginValue: 'Margin_Value__c',
+                taxExemption: 'Tax_Exemption__c',
+                paymentTerm: 'Payment_Term__c'
+            }
+        };
+    }
+
+    return {
+        propertyObject: 'GTCX_Property__c',
+        servicePointObject: 'GTCX_Service_Point__c',
+        siteObject: 'GTCX_Site__c',
+        property: {
+            account: 'GTCX_Account__c',
+            addressStreet: 'GTCX_Address__Street__s',
+            addressCity: 'GTCX_Address__City__s',
+            addressCountryCode: 'GTCX_Address__CountryCode__s',
+            addressPostalCode: 'GTCX_Address__PostalCode__s',
+            type: 'GTCX_Type__c'
+        },
+        servicePoint: {
+            marketIdentifier: 'GTCX_Market_Identifier__c',
+            serviceType: 'GTCX_Service_Type__c',
+            property: 'GTCX_Property__c',
+            annualConsumption: 'GTCX_Annual_Consumption__c',
+            productPreference: 'GTCX_Product_Preference__c',
+            durationOptions: 'GTCX_Duration_Options__c',
+            contactName: 'GTCX_Contact_Name__c',
+            contactEmail: 'GTCX_Contact_Email__c',
+            contactPhone: 'GTCX_Contact_Phone__c',
+            companyNumber: 'GTCX_Company_Number__c',
+            supplyStatus: 'GTCX_Supply_Status__c',
+            opportunity: 'GTCX_Opportunity__c'
+        },
+        site: {
+            property: 'GTCX_Property__c',
+            opportunity: 'GTCX_Opportunity__c',
+            servicePoint: 'GTCX_Service_Point__c',
+            startDate: 'GTCX_Start_Date__c',
+            endDate: 'GTCX_End_Date__c',
+            product: 'GTCX_Product__c',
+            marginValue: 'GTCX_Margin_Value__c',
+            taxExemption: 'GTCX_Tax_Exemption__c',
+            paymentTerm: 'GTCX_Payment_Term__c'
+        }
+    };
+}
+
+function setIfValue(target, fieldName, value) {
+    if (!fieldName || value === undefined || value === null || value === '') return;
+    target[fieldName] = value;
+}
+
 function parseSfdxAuthUrl(sfdxAuthUrl) {
     const match = String(sfdxAuthUrl || '').match(/^force:\/\/([^:]+):([^:]*):([^@]+)@(.+)$/);
     if (!match) {
@@ -1073,7 +1162,9 @@ async function processInvoiceInEnv(data, envName) {
         }
 
         // Sites and Service Points
+        const siteObjectMapping = getSiteObjectMapping(envName);
         const createdProperties = [];
+        const createdSites = [];
         const createdServicePoints = [];
 
         if (data.sites && data.sites.length > 0) {
@@ -1115,50 +1206,27 @@ async function processInvoiceInEnv(data, envName) {
 
                 let propertyId;
                 try {
-                    const propertyResult = await createRecord('GTCX_Property__c', {
+                    const propertyData = {
                         Name: propertyName,
-                        GTCX_Account__c: propertyAccountId || accountId,
-                        GTCX_Address__Street__s: street,
-                        GTCX_Address__City__s: site.city || '',
-                        GTCX_Address__CountryCode__s: site.country || 'GB',
-                        GTCX_Address__PostalCode__s: postcode,
-                        GTCX_Type__c: site.propertyType || "Site"
-                    }, envName);
+                        [siteObjectMapping.property.account]: propertyAccountId || accountId,
+                        [siteObjectMapping.property.addressStreet]: street,
+                        [siteObjectMapping.property.addressCity]: site.city || '',
+                        [siteObjectMapping.property.addressCountryCode]: site.country || 'GB',
+                        [siteObjectMapping.property.addressPostalCode]: postcode,
+                        [siteObjectMapping.property.type]: site.propertyType || "Site"
+                    };
+                    const propertyResult = await createRecord(siteObjectMapping.propertyObject, propertyData, envName);
                     
                     if (propertyResult.success || propertyResult.id) {
                         propertyId = propertyResult.id || propertyResult.id;
                         createdProperties.push({ id: propertyId, name: propertyName });
                     }
                 } catch (propErr) {
-                    console.error(`[${envName}] Failed to create GTCX_Property__c:`, propErr.message);
+                    console.error(`[${envName}] Failed to create ${siteObjectMapping.propertyObject}:`, propErr.message);
                     continue;
                 }
 
                 if (propertyId) {
-                    try {
-                        const siteData = {
-                            GTCX_Property__c: propertyId,
-                            GTCX_Opportunity__c: opportunityId,
-                            GTCX_Start_Date__c: site.startDate || data.contractStartDate
-                        };
-                        if (site.endDate) {
-                            siteData.GTCX_End_Date__c = site.endDate;
-                        } else if (data.contractStartDate && data.contractLength) {
-                            siteData.GTCX_End_Date__c = estimatedEndDate;
-                        }
-                        if (site.product) siteData.GTCX_Product__c = site.product;
-                        const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
-                        if (!isNaN(marginValue)) siteData.GTCX_Margin_Value__c = marginValue;
-                        const taxExemption = parseTaxExemption(site.taxExemption);
-                        if (taxExemption !== undefined) siteData.GTCX_Tax_Exemption__c = taxExemption;
-                        const paymentTerm = site.paymentTerm ? parseInt(site.paymentTerm) : NaN;
-                        if (!isNaN(paymentTerm)) siteData.GTCX_Payment_Term__c = paymentTerm;
-
-                        await createRecord('GTCX_Site__c', siteData, envName);
-                    } catch (assocErr) {
-                         console.error(`   [${envName}] Failed to create GTCX_Site__c:`, assocErr.message);
-                    }
-
                     if (site.meterPoints && site.meterPoints.length > 0) {
                         for (const meterPoint of site.meterPoints) {
                             const marketIdentifier = meterPoint.meterNumber || '';
@@ -1191,27 +1259,86 @@ async function processInvoiceInEnv(data, envName) {
                                 }
                             }
 
+                            let servicePointId;
                             try {
-                                const servicePointResult = await createRecord('GTCX_Service_Point__c', {
-                                    GTCX_Market_Identifier__c: marketIdentifier,
-                                    GTCX_Service_Type__c: fuelType,
-                                    GTCX_Property__c: propertyId,
-                                    GTCX_Annual_Consumption__c: annualConsumptionNum,
-                                    GTCX_Product_Preference__c: meterPoint.productPreference || undefined,
-                                    GTCX_Duration_Options__c: meterPoint.durationOptions || undefined,
-                                    GTCX_Contact_Name__c: meterPoint.contactName || undefined,
-                                    GTCX_Contact_Email__c: meterPoint.contactEmail || undefined,
-                                    GTCX_Contact_Phone__c: meterPoint.contactPhone || undefined,
-                                    GTCX_Company_Number__c: meterPoint.companyNumber || undefined,
-                                    GTCX_Supply_Status__c: supplyStatus
-                                }, envName);
+                                const servicePointData = {};
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.marketIdentifier, marketIdentifier);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.serviceType, fuelType);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.property, propertyId);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.annualConsumption, annualConsumptionNum);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.productPreference, meterPoint.productPreference);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.durationOptions, meterPoint.durationOptions);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.contactName, meterPoint.contactName);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.contactEmail, meterPoint.contactEmail);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.contactPhone, meterPoint.contactPhone);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.companyNumber, meterPoint.companyNumber);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.supplyStatus, supplyStatus);
+                                setIfValue(servicePointData, siteObjectMapping.servicePoint.opportunity, opportunityId);
+
+                                const servicePointResult = await createRecord(siteObjectMapping.servicePointObject, servicePointData, envName);
 
                                 if (servicePointResult.success || servicePointResult.id) {
-                                    createdServicePoints.push({ id: servicePointResult.id || servicePointResult.id, mpan: marketIdentifier });
+                                    servicePointId = servicePointResult.id || servicePointResult.id;
+                                    createdServicePoints.push({ id: servicePointId, mpan: marketIdentifier });
                                 }
                             } catch (spError) {
                                 console.error(`[${envName}] Failed to create Service Point for MPAN ${marketIdentifier}:`, spError.message);
                             }
+
+                            try {
+                                const siteData = {};
+                                setIfValue(siteData, siteObjectMapping.site.account, propertyAccountId || accountId);
+                                setIfValue(siteData, siteObjectMapping.site.property, propertyId);
+                                setIfValue(siteData, siteObjectMapping.site.opportunity, opportunityId);
+                                setIfValue(siteData, siteObjectMapping.site.servicePoint, servicePointId);
+                                setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || data.contractStartDate);
+                                if (site.endDate) {
+                                    setIfValue(siteData, siteObjectMapping.site.endDate, site.endDate);
+                                } else if (data.contractStartDate && data.contractLength) {
+                                    setIfValue(siteData, siteObjectMapping.site.endDate, estimatedEndDate);
+                                }
+                                setIfValue(siteData, siteObjectMapping.site.product, site.product);
+                                const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
+                                if (!isNaN(marginValue)) setIfValue(siteData, siteObjectMapping.site.marginValue, marginValue);
+                                const taxExemption = parseTaxExemption(site.taxExemption);
+                                if (taxExemption !== undefined) setIfValue(siteData, siteObjectMapping.site.taxExemption, taxExemption);
+                                const paymentTerm = site.paymentTerm ? parseInt(site.paymentTerm) : NaN;
+                                if (!isNaN(paymentTerm)) setIfValue(siteData, siteObjectMapping.site.paymentTerm, paymentTerm);
+
+                                const siteResult = await createRecord(siteObjectMapping.siteObject, siteData, envName);
+                                if (siteResult.success || siteResult.id) {
+                                    createdSites.push({ id: siteResult.id || siteResult.id, propertyId, servicePointId });
+                                }
+                            } catch (siteErr) {
+                                console.error(`   [${envName}] Failed to create ${siteObjectMapping.siteObject}:`, siteErr.message);
+                            }
+                        }
+                    } else {
+                        try {
+                            const siteData = {};
+                            setIfValue(siteData, siteObjectMapping.site.account, propertyAccountId || accountId);
+                            setIfValue(siteData, siteObjectMapping.site.property, propertyId);
+                            setIfValue(siteData, siteObjectMapping.site.opportunity, opportunityId);
+                            setIfValue(siteData, siteObjectMapping.site.startDate, site.startDate || data.contractStartDate);
+                            if (site.endDate) {
+                                setIfValue(siteData, siteObjectMapping.site.endDate, site.endDate);
+                            } else if (data.contractStartDate && data.contractLength) {
+                                setIfValue(siteData, siteObjectMapping.site.endDate, estimatedEndDate);
+                            }
+                            setIfValue(siteData, siteObjectMapping.site.product, site.product);
+                            const marginValue = site.marginValue ? parseFloat(site.marginValue) : NaN;
+                            if (!isNaN(marginValue)) setIfValue(siteData, siteObjectMapping.site.marginValue, marginValue);
+                            const taxExemption = parseTaxExemption(site.taxExemption);
+                            if (taxExemption !== undefined) setIfValue(siteData, siteObjectMapping.site.taxExemption, taxExemption);
+                            const paymentTerm = site.paymentTerm ? parseInt(site.paymentTerm) : NaN;
+                            if (!isNaN(paymentTerm)) setIfValue(siteData, siteObjectMapping.site.paymentTerm, paymentTerm);
+
+                            const siteResult = await createRecord(siteObjectMapping.siteObject, siteData, envName);
+                            if (siteResult.success || siteResult.id) {
+                                createdSites.push({ id: siteResult.id || siteResult.id, propertyId });
+                            }
+                        } catch (siteErr) {
+                            console.error(`   [${envName}] Failed to create ${siteObjectMapping.siteObject}:`, siteErr.message);
                         }
                     }
                 }
@@ -1282,8 +1409,10 @@ async function processInvoiceInEnv(data, envName) {
                 opportunityId,
                 contentDocumentId,
                 stage: stageName,
-                sitesCreated: createdProperties.length,
+                propertiesCreated: createdProperties.length,
+                sitesCreated: createdSites.length,
                 servicePointsCreated: createdServicePoints.length,
+                sites: createdSites,
                 servicePoints: createdServicePoints
             }
         };
