@@ -1,0 +1,234 @@
+:host {
+  --surface-border: #e5e7eb;
+  --surface-subtle: #f8fafc;
+  --surface-soft: #f9fafb;
+  --text-primary: #374151;
+  --text-heading: #0d2433;
+  --text-muted: #4b5563;
+  --success-bg: #f4f6f9;
+  --success-border: #d8dde6;
+  --success-text: #16325c;
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #ea001e;
+
+  display: block;
+  font-family: "Inter", sans-serif;
+  color: var(--text-primary);
+}
+
+.slds-page-header {
+  background: var(--surface-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  box-shadow: none;
+  margin-bottom: 1.5rem;
+}
+
+.slds-page-header__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.slds-text-color_weak {
+  color: var(--text-muted);
+}
+
+.slds-align_absolute-center {
+  min-height: 220px;
+}
+
+.slds-box {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.slds-box_border {
+  border: 1px solid var(--surface-border);
+}
+
+.slds-box__header {
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--text-heading);
+}
+
+.slds-box__body {
+  background: #ffffff;
+}
+
+.datatable-container {
+  margin-bottom: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.datatable-header-row {
+  margin-bottom: 0.5rem;
+  padding: 0 0.25rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.datatable-header-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+
+.page-size-selector {
+  min-width: 5rem;
+}
+
+.pagination-summary {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  min-width: 4.75rem;
+  text-align: center;
+}
+
+.column-options-menu {
+  --slds-c-button-color-border: #c9c9c9;
+  --slds-c-button-radius-border: 6px;
+}
+
+.bulk-modal-checkbox {
+  padding-top: 0.5rem;
+}
+
+.professional-table {
+  --slds-c-table-color-border: #e5e7eb;
+  --slds-c-table-cell-color-border: #e5e7eb;
+  --slds-c-table-header-color-background: #f8fafc;
+  --slds-c-table-header-color-border: #e5e7eb;
+  --slds-c-table-color-background-header: #f8fafc;
+  --slds-c-table-color-background-row-hover: #f9fafb;
+  --slds-c-table-text-color: #374151;
+  --slds-c-table-heading-text-color: #4b5563;
+  --slds-c-table-header-font-weight: 600;
+  --slds-c-table-header-font-size: 0.8125rem;
+  --slds-c-icon-color-foreground-default: #9ca3af;
+}
+
+.missing-required-cell {
+  color: #ea001e;
+  font-weight: 600;
+}
+
+.slds-theme_error {
+  background: var(--error-bg);
+  border-color: var(--error-border);
+}
+
+.slds-theme_error h2,
+.slds-theme_error h3,
+.slds-theme_error p,
+.slds-theme_error li {
+  color: var(--error-text);
+}
+
+.slds-theme_success {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+
+.slds-theme_success h3,
+.slds-theme_success p,
+.slds-theme_success span {
+  color: var(--success-text);
+}
+
+.ready-state-inline {
+  padding: 0.25rem 0;
+}
+
+.success-message-container {
+  background: #ffffff;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.success-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.success-icon {
+  --slds-c-icon-color-foreground-default: #1b96ff;
+}
+
+.success-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.success-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.success-note {
+  margin: 0.75rem auto 0;
+  max-width: 640px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.progress-section {
+  margin-top: 1.5rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #1b96ff;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .slds-page-header__title {
+    font-size: 1.125rem;
+  }
+
+  .datatable-header-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .success-message-container {
+    padding: 1.75rem 1rem;
+  }
+}

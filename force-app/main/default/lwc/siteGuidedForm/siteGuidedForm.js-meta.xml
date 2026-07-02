@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>65.0</apiVersion>
+    <masterLabel>Site Guided Form</masterLabel>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+        <target>lightningCommunity__Page</target>
+    </targets>
+    <targetConfigs>
+        <!-- deployment trigger 10 -->
+        <!-- Configuration for Account Record Pages -->
+        <targetConfig targets="lightning__RecordPage">
+            <property
+        name="recordId"
+        type="String"
+        label="Record ID"
+        description="Automatically populated with Account ID from record page context"
+      />
+        </targetConfig>
+        <!-- Note: properties are not supported for lightningCommunity__Page target; configure recordId via page context or parent component in Experience Builder -->
+    </targetConfigs>
+</LightningComponentBundle>

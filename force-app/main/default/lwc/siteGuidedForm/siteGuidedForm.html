@@ -1,0 +1,302 @@
+<template>
+  <div class="slds-p-around_large">
+    <!-- Form Input Section - Hide when Success Message is Shown -->
+    <template lwc:if={notShowSuccessMessage}>
+      <!-- Loading Spinner -->
+      <template lwc:if={loading}>
+        <div class="slds-align_absolute-center slds-p-around_large">
+          <lightning-spinner
+            alternative-text={labels.UI_Loading}
+            size="large"
+          ></lightning-spinner>
+          <p
+            class="slds-text-align_center slds-m-top_large slds-text-color_weak"
+          >
+            {labels.SiteGuidedForm_LoadingSites}
+          </p>
+        </div>
+      </template>
+
+      <!-- Editable Datatable -->
+      <template lwc:else>
+        <div class="datatable-header-row">
+          <span class="datatable-header-title"
+            >{labels.ContractManager_Sites}</span
+          >
+          <div
+            class="slds-grid slds-gutters_x-small slds-grid_vertical-align-center"
+          >
+            <lightning-combobox
+              class="page-size-selector"
+              label="Rows per page"
+              value={pageSize}
+              options={pageSizeOptions}
+              onchange={handlePageSizeChange}
+            >
+            </lightning-combobox>
+            <span class="pagination-summary">{paginationSummary}</span>
+            <lightning-button
+              label={labels.Common_Previous}
+              onclick={handlePreviousPage}
+              disabled={isPreviousPageDisabled}
+            >
+            </lightning-button>
+            <lightning-button
+              label={labels.Common_Next}
+              onclick={handleNextPage}
+              disabled={isNextPageDisabled}
+            >
+            </lightning-button>
+            <lightning-button-menu
+              alternative-text={labels.SiteGuidedForm_SortingOptions}
+              icon-name="utility:threedots_vertical"
+              icon-size="small"
+              menu-alignment="right"
+              onselect={handleColumnMenuSelect}
+              class="column-options-menu"
+            >
+              <template for:each={columnMenuItems} for:item="item">
+                <lightning-menu-item
+                  key={item.value}
+                  value={item.value}
+                  label={item.label}
+                  checked={item.checked}
+                >
+                </lightning-menu-item>
+              </template>
+            </lightning-button-menu>
+          </div>
+        </div>
+
+        <div class="datatable-container">
+          <lightning-datatable
+            key-field="Id"
+            data={paginatedSites}
+            columns={visibleColumns}
+            draft-values={draftValues}
+            selected-rows={selectedRowIds}
+            oncellchange={handleCellChange}
+            onsave={handleSave}
+            onrowaction={handleRowAction}
+            onrowselection={handleRowSelection}
+            class="professional-table"
+          >
+          </lightning-datatable>
+        </div>
+
+        <template lwc:if={showBulkUpdateModal}>
+          <section
+            role="dialog"
+            tabindex="-1"
+            aria-modal="true"
+            class="slds-modal slds-fade-in-open"
+          >
+            <div class="slds-modal__container">
+              <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">
+                  {labels.SiteGuidedForm_ApplyValueToSelectedRows}
+                </h2>
+              </header>
+              <div class="slds-modal__content slds-p-around_medium">
+                <lightning-input
+                  type={bulkValueInputType}
+                  label={bulkUpdateFieldLabel}
+                  value={bulkUpdateValue}
+                  onchange={handleBulkValueChange}
+                >
+                </lightning-input>
+                <div class="bulk-modal-checkbox">
+                  <lightning-input
+                    type="checkbox"
+                    checked={bulkUpdateApplySelected}
+                    label={bulkUpdateSelectionLabel}
+                    onchange={handleBulkApplySelectedToggle}
+                  >
+                  </lightning-input>
+                </div>
+              </div>
+              <footer class="slds-modal__footer">
+                <lightning-button
+                  variant="neutral"
+                  label={labels.Common_Cancel}
+                  onclick={handleCancelBulkModal}
+                >
+                </lightning-button>
+                <lightning-button
+                  class="slds-m-left_small"
+                  variant="brand"
+                  label={labels.SiteGuidedForm_Apply}
+                  onclick={handleApplyBulkUpdate}
+                  disabled={isBulkApplyDisabled}
+                >
+                </lightning-button>
+              </footer>
+            </div>
+          </section>
+          <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+      </template>
+
+      <!-- Success / Ready to Submit Section -->
+      <template lwc:if={notShowValidationMessage}>
+        <template lwc:if={validationPerformed}>
+          <template lwc:if={sites.length}>
+            <div class="ready-state-inline slds-m-top_medium">
+              <div class="slds-media slds-grid_vertical-align-center">
+                <div class="slds-media__figure">
+                  <lightning-icon
+                    icon-name="utility:success"
+                    size="small"
+                    class="slds-text-color_success slds-m-right_small"
+                  ></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                  <h3
+                    class="slds-text-heading_small slds-m-bottom_none slds-text-color_success"
+                  >
+                    {labels.SiteGuidedForm_AllRequiredFields}
+                  </h3>
+                </div>
+              </div>
+
+              <div class="slds-p-top_small slds-text-align_center">
+                <template lwc:if={showSiteManagerSubmit}>
+                  <lightning-button
+                    variant="success"
+                    label={labels.SiteGuidedForm_SubmitForm}
+                    icon-name="utility:check"
+                    onclick={handleSubmitForm}
+                    disabled={disableSiteManagerSubmitButton}
+                    size="small"
+                  >
+                  </lightning-button>
+                </template>
+
+                <template lwc:if={showPortfolioOwnerSubmit}>
+                  <div
+                    class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-gutters_small"
+                  >
+                    <lightning-button
+                      variant="success"
+                      label={labels.Common_Approve}
+                      icon-name="utility:check"
+                      onclick={handleApproveSites}
+                      disabled={disablePortfolioApprovalActions}
+                      size="small"
+                    >
+                    </lightning-button>
+                    <lightning-button
+                      variant="destructive"
+                      label={labels.Common_Reject}
+                      icon-name="utility:close"
+                      onclick={handleRejectSites}
+                      disabled={disablePortfolioApprovalActions}
+                      size="small"
+                    >
+                    </lightning-button>
+                  </div>
+                </template>
+
+                <template lwc:if={submitting}>
+                  <lightning-spinner
+                    alternative-text={labels.Common_Submitting}
+                    size="small"
+                    class="slds-m-left_small"
+                  ></lightning-spinner>
+                  <span class="slds-m-left_small slds-text-body_small"
+                    >{labels.SiteGuidedForm_Processing}</span
+                  >
+                </template>
+
+                <template lwc:if={accountCodeLockoutMessage}>
+                  <div
+                    class="slds-notify slds-notify_alert slds-theme_error slds-m-top_small"
+                    role="alert"
+                  >
+                    <span class="slds-assistive-text"
+                      >{labels.Common_MessageErrorTitle}</span
+                    >
+                    <h2>{accountCodeLockoutMessage}</h2>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </template>
+      </template>
+    </template>
+
+    <!-- Success Message Section -->
+    <template lwc:if={showSuccessMessage}>
+      <div class="success-message-container">
+        <div class="success-header">
+          <lightning-icon
+            icon-name="utility:success"
+            size="medium"
+            class="success-icon"
+          ></lightning-icon>
+          <h2 class="success-title">{labels.SiteGuidedForm_WeAreWorking}</h2>
+        </div>
+        <p class="success-subtitle">{labels.SiteGuidedForm_ThisShouldOnly}</p>
+        <p class="success-note">{labels.SiteGuidedForm_WellKeepWorking}</p>
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div class="progress-fill" style={progressBarStyle}></div>
+          </div>
+          <p class="progress-text">{processedOfSitesLabel}</p>
+        </div>
+      </div>
+    </template>
+
+    <template lwc:if={showAccountCodePrompt}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        aria-modal="true"
+        class="slds-modal slds-fade-in-open"
+      >
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-text-heading_medium">
+              {labels.SiteGuidedForm_AccountCodeVerification}
+            </h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <p class="slds-text-body_regular slds-m-bottom_small">
+              {accountCodePromptHelpText}
+            </p>
+            <lightning-input
+              type="text"
+              label={labels.SiteGuidedForm_AccountCode}
+              value={accountCodeInput}
+              onchange={handleAccountCodeInputChange}
+              required
+            >
+            </lightning-input>
+            <template lwc:if={accountCodeError}>
+              <p class="slds-text-color_error slds-m-top_x-small">
+                {accountCodeError}
+              </p>
+            </template>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              variant="neutral"
+              label={labels.Common_Cancel}
+              onclick={handleCancelAccountCodePrompt}
+            >
+            </lightning-button>
+            <lightning-button
+              class="slds-m-left_small"
+              variant="brand"
+              label={labels.Common_Verify}
+              onclick={handleConfirmAccountCodePrompt}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
+</template>
