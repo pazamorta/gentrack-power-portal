@@ -122,6 +122,9 @@ test('CXST-516 site guided form receives postcode, market identifier, clear pagi
   const uploadController = readWorkspaceFile(
     'force-app/main/default/classes/PSPointCsvUploadCtrl.cls'
   );
+  const uploadControllerTest = readWorkspaceFile(
+    'force-app/main/default/classes/PSPointCsvUploadCtrlTest.cls'
+  );
   const tableController = readWorkspaceFile(
     'force-app/main/default/classes/PropertyServicePointController.cls'
   );
@@ -134,6 +137,21 @@ test('CXST-516 site guided form receives postcode, market identifier, clear pagi
 
   expect(uploadController).toContain('servicePoint.Opportunity__c = opportunityId;');
   expect(uploadController).toContain('servicePoint.Postcode__c = servicePointPostcode;');
+  expect(uploadController).toContain('Map<String, Integer> propertyIndexByKey');
+  expect(uploadController).toContain('buildPropertyDedupeKey(propertyRecord)');
+  expect(uploadController).toContain('for (Integer i = 0; i < sourceRowsForRows.size(); i++)');
+  expect(uploadController).toContain(
+    'associationIndexForServicePoint.add(associationsToInsert.size());'
+  );
+  expect(uploadController).toContain(
+    'associationsToInsert[associationIndex].Service_Point__c = insertedServicePoint.Id;'
+  );
+  expect(uploadControllerTest).toContain(
+    'testUploadCsvRowsReusesPropertyForDuplicateCsvPropertyRows'
+  );
+  expect(uploadControllerTest).toContain(
+    'Duplicate CSV rows for the same property should create one Property record.'
+  );
   expect(tableController).toContain("row.put('Id', site.Property__c);");
   expect(tableController).toContain("row.put('Association_Id__c', site.Id);");
   expect(tableController).toContain("row.put('Service_Point_Id__c', site.Service_Point__c);");

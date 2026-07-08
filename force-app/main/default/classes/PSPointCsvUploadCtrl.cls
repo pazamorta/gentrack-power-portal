@@ -73,7 +73,9 @@ public inherited sharing class PSPointCsvUploadCtrl {
     ];
 
     List<Property__c> propertiesToInsert = new List<Property__c>();
-    List<Map<String, String>> sourceRowsForInsertedProperties = new List<Map<String, String>>();
+    Map<String, Integer> propertyIndexByKey = new Map<String, Integer>();
+    List<Integer> propertyIndexesForRows = new List<Integer>();
+    List<Map<String, String>> sourceRowsForRows = new List<Map<String, String>>();
     List<String> marketIdentifiersForRows = new List<String>();
     List<Date> startDatesForRows = new List<Date>();
     List<Date> endDatesForRows = new List<Date>();
@@ -179,8 +181,14 @@ public inherited sharing class PSPointCsvUploadCtrl {
         validPropertyTypes
       );
 
-      propertiesToInsert.add(propertyRecord);
-      sourceRowsForInsertedProperties.add(row);
+      String propertyKey = buildPropertyDedupeKey(propertyRecord);
+      if (!propertyIndexByKey.containsKey(propertyKey)) {
+        propertyIndexByKey.put(propertyKey, propertiesToInsert.size());
+        propertiesToInsert.add(propertyRecord);
+      }
+
+      propertyIndexesForRows.add(propertyIndexByKey.get(propertyKey));
+      sourceRowsForRows.add(row);
       marketIdentifiersForRows.add(marketIdentifier);
       startDatesForRows.add(startDate);
       endDatesForRows.add(endDate);
@@ -203,11 +211,12 @@ public inherited sharing class PSPointCsvUploadCtrl {
     insert propertiesToInsert;
 
     List<Service_Point__c> servicePointsToInsert = new List<Service_Point__c>();
+    List<Integer> associationIndexForServicePoint = new List<Integer>();
     List<Site__c> associationsToInsert = new List<Site__c>();
 
-    for (Integer i = 0; i < propertiesToInsert.size(); i++) {
-      Property__c insertedProperty = propertiesToInsert[i];
-      Map<String, String> sourceRow = sourceRowsForInsertedProperties[i];
+    for (Integer i = 0; i < sourceRowsForRows.size(); i++) {
+      Property__c insertedProperty = propertiesToInsert[propertyIndexesForRows[i]];
+      Map<String, String> sourceRow = sourceRowsForRows[i];
       String requiredMarketIdentifier = marketIdentifiersForRows[i];
 
       Service_Point__c servicePoint = new Service_Point__c();
@@ -287,6 +296,7 @@ public inherited sharing class PSPointCsvUploadCtrl {
       }
 
       if (hasServicePointData) {
+        associationIndexForServicePoint.add(associationsToInsert.size());
         servicePointsToInsert.add(servicePoint);
       }
 
@@ -311,21 +321,10 @@ public inherited sharing class PSPointCsvUploadCtrl {
 
     if (!associationsToInsert.isEmpty()) {
       if (!servicePointsToInsert.isEmpty()) {
-        Map<Id, Id> propertyToServicePoint = new Map<Id, Id>();
-        for (Service_Point__c insertedSp : servicePointsToInsert) {
-          if (
-            insertedSp.Property__c != null &&
-            insertedSp.Id != null &&
-            !propertyToServicePoint.containsKey(insertedSp.Property__c)
-          ) {
-            propertyToServicePoint.put(insertedSp.Property__c, insertedSp.Id);
-          }
-        }
-        for (Site__c assoc : associationsToInsert) {
-          Id servicePointId = propertyToServicePoint.get(assoc.Property__c);
-          if (servicePointId != null) {
-            assoc.Service_Point__c = servicePointId;
-          }
+        for (Integer i = 0; i < servicePointsToInsert.size(); i++) {
+          Integer associationIndex = associationIndexForServicePoint[i];
+          Service_Point__c insertedServicePoint = servicePointsToInsert[i];
+          associationsToInsert[associationIndex].Service_Point__c = insertedServicePoint.Id;
         }
       }
       insert associationsToInsert;
@@ -422,6 +421,26 @@ public inherited sharing class PSPointCsvUploadCtrl {
       return line2;
     }
     return line1 + ', ' + line2;
+  }
+
+  private static String buildPropertyDedupeKey(Property__c propertyRecord) {
+    return String.join(
+      new List<String>{
+        normalizeDedupeValue(propertyRecord.Name),
+        normalizeDedupeValue(propertyRecord.Address__Street__s),
+        normalizeDedupeValue(propertyRecord.Address__City__s),
+        normalizeDedupeValue(propertyRecord.Address__PostalCode__s),
+        normalizeDedupeValue(propertyRecord.Type__c)
+      },
+      '|'
+    );
+  }
+
+  private static String normalizeDedupeValue(String value) {
+    if (String.isBlank(value)) {
+      return '';
+    }
+    return value.trim().toLowerCase().replaceAll('\\s+', ' ');
   }
 
   private static Boolean isYellowPropertyColumn(String header) {

@@ -372,6 +372,123 @@ public with sharing class PSPointCsvUploadCtrlTest {
   }
 
   @isTest
+  static void testUploadCsvRowsReusesPropertyForDuplicateCsvPropertyRows() {
+    Opportunity opp = [
+      SELECT Id
+      FROM Opportunity
+      WHERE Name = 'CSV Upload Opportunity'
+      LIMIT 1
+    ];
+
+    List<Map<String, String>> rows = new List<Map<String, String>>{
+      new Map<String, String>{
+        'Property Name' => 'Riverside Apartments',
+        'AddressLine1' => '12 Riverbank Close',
+        'City' => 'Great Britain',
+        'Postcode' => 'G4 0HF',
+        'Type' => 'Site',
+        'Market Identifier' => '11200000000',
+        'Service Type' => 'Electricity',
+        'Annual Consumption' => '14500',
+        'start_date' => String.valueOf(System.today()),
+        'end_date' => String.valueOf(System.today().addYears(1)),
+        'product' => 'Flex',
+        'tpi_margin' => '2.50',
+        'tax_exemption' => '0',
+        'payment_term' => '30'
+      },
+      new Map<String, String>{
+        'Property Name' => 'Riverside Apartments',
+        'AddressLine1' => '12 Riverbank Close',
+        'City' => 'Great Britain',
+        'Postcode' => 'G4 0HF',
+        'Type' => 'Site',
+        'Market Identifier' => '1115555662',
+        'Service Type' => 'Gas',
+        'Annual Consumption' => '27500',
+        'start_date' => String.valueOf(System.today()),
+        'end_date' => String.valueOf(System.today().addYears(1)),
+        'product' => 'Flex',
+        'tpi_margin' => '2.50',
+        'tax_exemption' => '0',
+        'payment_term' => '30'
+      }
+    };
+
+    Test.startTest();
+    PSPointCsvUploadCtrl.UploadResult result = PSPointCsvUploadCtrl.uploadCsvRows(
+      opp.Id,
+      rows
+    );
+    Test.stopTest();
+
+    System.assertEquals(
+      1,
+      result.propertyCount,
+      'Duplicate CSV rows for the same property should create one Property record.'
+    );
+    System.assertEquals(
+      2,
+      result.servicePointCount,
+      'Each CSV service row should still create its own Service Point.'
+    );
+    System.assertEquals(
+      2,
+      result.associationCount,
+      'Each CSV service row should still create its own Site association.'
+    );
+
+    List<Property__c> properties = [
+      SELECT Id
+      FROM Property__c
+      WHERE
+        Name = 'Riverside Apartments' AND
+        Address__PostalCode__s = 'G4 0HF'
+    ];
+    System.assertEquals(
+      1,
+      properties.size(),
+      'Only one Property should exist for the duplicate CSV property identity.'
+    );
+
+    List<Service_Point__c> servicePoints = [
+      SELECT Id, Property__c, Market_Identifier__c
+      FROM Service_Point__c
+      WHERE Opportunity__c = :opp.Id
+      ORDER BY Market_Identifier__c
+    ];
+    System.assertEquals(2, servicePoints.size(), 'Two Service Points expected.');
+    for (Service_Point__c servicePoint : servicePoints) {
+      System.assertEquals(
+        properties[0].Id,
+        servicePoint.Property__c,
+        'Both Service Points should share the single deduped Property.'
+      );
+    }
+
+    Map<Id, Service_Point__c> servicePointsById = new Map<Id, Service_Point__c>(
+      servicePoints
+    );
+    List<Site__c> associations = [
+      SELECT Id, Property__c, Service_Point__c
+      FROM Site__c
+      WHERE Opportunity__c = :opp.Id
+    ];
+    System.assertEquals(2, associations.size(), 'Two Site associations expected.');
+    for (Site__c association : associations) {
+      System.assertEquals(
+        properties[0].Id,
+        association.Property__c,
+        'Both Site associations should share the single deduped Property.'
+      );
+      System.assert(
+        servicePointsById.containsKey(association.Service_Point__c),
+        'Each Site association should point to the Service Point from its own row.'
+      );
+    }
+  }
+
+  @isTest
   static void testUploadCsvRowsTriggersJuniferQueueableAndUpdatesPropertyReference() {
     Account baseAccount = [
       SELECT Id
