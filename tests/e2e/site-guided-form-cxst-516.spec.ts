@@ -137,7 +137,9 @@ test('CXST-516 site guided form receives postcode, market identifier, clear pagi
 
   expect(uploadController).toContain('servicePoint.Opportunity__c = opportunityId;');
   expect(uploadController).toContain('servicePoint.Postcode__c = servicePointPostcode;');
-  expect(uploadController).toContain('Map<String, Integer> propertyIndexByKey');
+  expect(uploadController).toContain('findExistingPropertiesByKey');
+  expect(uploadController).toContain('Map<String, Property__c> existingPropertiesByKey');
+  expect(uploadController).toContain("'ADDRESS'");
   expect(uploadController).toContain('buildPropertyDedupeKey(propertyRecord)');
   expect(uploadController).toContain('for (Integer i = 0; i < sourceRowsForRows.size(); i++)');
   expect(uploadController).toContain(
@@ -150,7 +152,10 @@ test('CXST-516 site guided form receives postcode, market identifier, clear pagi
     'testUploadCsvRowsReusesPropertyForDuplicateCsvPropertyRows'
   );
   expect(uploadControllerTest).toContain(
-    'Duplicate CSV rows for the same property should create one Property record.'
+    'testUploadCsvRowsReusesExistingPropertyAcrossUploadsAndOpportunities'
+  );
+  expect(uploadControllerTest).toContain(
+    'A later upload on another Opportunity should reuse the existing same-address Property.'
   );
   expect(tableController).toContain("row.put('Id', site.Property__c);");
   expect(tableController).toContain("row.put('Association_Id__c', site.Id);");

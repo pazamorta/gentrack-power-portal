@@ -72,9 +72,8 @@ public inherited sharing class PSPointCsvUploadCtrl {
       LIMIT 1
     ];
 
-    List<Property__c> propertiesToInsert = new List<Property__c>();
-    Map<String, Integer> propertyIndexByKey = new Map<String, Integer>();
-    List<Integer> propertyIndexesForRows = new List<Integer>();
+    List<Property__c> candidatePropertiesForRows = new List<Property__c>();
+    List<String> propertyKeysForRows = new List<String>();
     List<Map<String, String>> sourceRowsForRows = new List<Map<String, String>>();
     List<String> marketIdentifiersForRows = new List<String>();
     List<Date> startDatesForRows = new List<Date>();
@@ -182,12 +181,8 @@ public inherited sharing class PSPointCsvUploadCtrl {
       );
 
       String propertyKey = buildPropertyDedupeKey(propertyRecord);
-      if (!propertyIndexByKey.containsKey(propertyKey)) {
-        propertyIndexByKey.put(propertyKey, propertiesToInsert.size());
-        propertiesToInsert.add(propertyRecord);
-      }
-
-      propertyIndexesForRows.add(propertyIndexByKey.get(propertyKey));
+      candidatePropertiesForRows.add(propertyRecord);
+      propertyKeysForRows.add(propertyKey);
       sourceRowsForRows.add(row);
       marketIdentifiersForRows.add(marketIdentifier);
       startDatesForRows.add(startDate);
@@ -199,23 +194,46 @@ public inherited sharing class PSPointCsvUploadCtrl {
       rowNumber++;
     }
 
-    if (propertiesToInsert.isEmpty()) {
+    if (candidatePropertiesForRows.isEmpty()) {
       throw new AuraHandledException(
         'No valid data rows found. Ensure yellow columns contain data.'
       );
     }
 
-    for (Integer i = 0; i < propertiesToInsert.size(); i++) {
-      propertiesToInsert[i].Account__c = targetOpportunity.AccountId;
+    Map<String, Property__c> existingPropertiesByKey = findExistingPropertiesByKey(
+      new Set<String>(propertyKeysForRows),
+      candidatePropertiesForRows
+    );
+    List<Property__c> propertiesToInsert = new List<Property__c>();
+    Map<String, Property__c> newPropertiesByKey = new Map<String, Property__c>();
+    List<Property__c> propertiesForRows = new List<Property__c>();
+
+    for (Integer i = 0; i < candidatePropertiesForRows.size(); i++) {
+      String propertyKey = propertyKeysForRows[i];
+      if (existingPropertiesByKey.containsKey(propertyKey)) {
+        propertiesForRows.add(existingPropertiesByKey.get(propertyKey));
+        continue;
+      }
+
+      if (!newPropertiesByKey.containsKey(propertyKey)) {
+        Property__c propertyToInsert = candidatePropertiesForRows[i];
+        propertyToInsert.Account__c = targetOpportunity.AccountId;
+        newPropertiesByKey.put(propertyKey, propertyToInsert);
+        propertiesToInsert.add(propertyToInsert);
+      }
+      propertiesForRows.add(newPropertiesByKey.get(propertyKey));
     }
-    insert propertiesToInsert;
+
+    if (!propertiesToInsert.isEmpty()) {
+      insert propertiesToInsert;
+    }
 
     List<Service_Point__c> servicePointsToInsert = new List<Service_Point__c>();
     List<Integer> associationIndexForServicePoint = new List<Integer>();
     List<Site__c> associationsToInsert = new List<Site__c>();
 
     for (Integer i = 0; i < sourceRowsForRows.size(); i++) {
-      Property__c insertedProperty = propertiesToInsert[propertyIndexesForRows[i]];
+      Property__c insertedProperty = propertiesForRows[i];
       Map<String, String> sourceRow = sourceRowsForRows[i];
       String requiredMarketIdentifier = marketIdentifiersForRows[i];
 
@@ -334,7 +352,7 @@ public inherited sharing class PSPointCsvUploadCtrl {
     result.servicePointCount = servicePointsToInsert.size();
     result.associationCount = associationsToInsert.size();
 
-    if (!propertiesToInsert.isEmpty()) {
+    if (!sourceRowsForRows.isEmpty()) {
       result.warnings.add(
         'Junifer sync skipped during the renamed metadata cutover. Salesforce Site, Property and Service Point records were created.'
       );
@@ -424,16 +442,82 @@ public inherited sharing class PSPointCsvUploadCtrl {
   }
 
   private static String buildPropertyDedupeKey(Property__c propertyRecord) {
+    if (
+      String.isNotBlank(propertyRecord.Address__Street__s) ||
+      String.isNotBlank(propertyRecord.Address__City__s) ||
+      String.isNotBlank(propertyRecord.Address__PostalCode__s)
+    ) {
+      return String.join(
+        new List<String>{
+          'ADDRESS',
+          normalizeDedupeValue(propertyRecord.Address__Street__s),
+          normalizeDedupeValue(propertyRecord.Address__City__s),
+          normalizeDedupeValue(propertyRecord.Address__PostalCode__s),
+          normalizeDedupeValue(propertyRecord.Type__c)
+        },
+        '|'
+      );
+    }
+
     return String.join(
       new List<String>{
+        'NAME',
         normalizeDedupeValue(propertyRecord.Name),
-        normalizeDedupeValue(propertyRecord.Address__Street__s),
-        normalizeDedupeValue(propertyRecord.Address__City__s),
-        normalizeDedupeValue(propertyRecord.Address__PostalCode__s),
         normalizeDedupeValue(propertyRecord.Type__c)
       },
       '|'
     );
+  }
+
+  private static Map<String, Property__c> findExistingPropertiesByKey(
+    Set<String> propertyKeys,
+    List<Property__c> candidateProperties
+  ) {
+    Map<String, Property__c> existingPropertiesByKey = new Map<String, Property__c>();
+    Set<String> postcodes = new Set<String>();
+    Set<String> namesWithoutAddress = new Set<String>();
+
+    for (Property__c candidate : candidateProperties) {
+      if (String.isNotBlank(candidate.Address__PostalCode__s)) {
+        postcodes.add(candidate.Address__PostalCode__s);
+      } else if (
+        String.isBlank(candidate.Address__Street__s) &&
+        String.isBlank(candidate.Address__City__s) &&
+        String.isNotBlank(candidate.Name)
+      ) {
+        namesWithoutAddress.add(candidate.Name);
+      }
+    }
+
+    if (postcodes.isEmpty() && namesWithoutAddress.isEmpty()) {
+      return existingPropertiesByKey;
+    }
+
+    for (Property__c existingProperty : [
+      SELECT
+        Id,
+        Name,
+        Account__c,
+        Address__Street__s,
+        Address__City__s,
+        Address__PostalCode__s,
+        Type__c
+      FROM Property__c
+      WHERE
+        Address__PostalCode__s IN :postcodes OR
+        (Address__PostalCode__s = NULL AND Name IN :namesWithoutAddress)
+      ORDER BY CreatedDate ASC, Id ASC
+    ]) {
+      String propertyKey = buildPropertyDedupeKey(existingProperty);
+      if (
+        propertyKeys.contains(propertyKey) &&
+        !existingPropertiesByKey.containsKey(propertyKey)
+      ) {
+        existingPropertiesByKey.put(propertyKey, existingProperty);
+      }
+    }
+
+    return existingPropertiesByKey;
   }
 
   private static String normalizeDedupeValue(String value) {

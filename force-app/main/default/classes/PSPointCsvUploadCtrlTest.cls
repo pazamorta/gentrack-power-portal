@@ -489,6 +489,136 @@ public with sharing class PSPointCsvUploadCtrlTest {
   }
 
   @isTest
+  static void testUploadCsvRowsReusesExistingPropertyAcrossUploadsAndOpportunities() {
+    Account accountRecord = [
+      SELECT Id
+      FROM Account
+      WHERE Name = 'CSV Upload Account'
+      LIMIT 1
+    ];
+    Opportunity firstOpp = [
+      SELECT Id
+      FROM Opportunity
+      WHERE Name = 'CSV Upload Opportunity'
+      LIMIT 1
+    ];
+    Opportunity secondOpp = new Opportunity(
+      Name = 'CSV Upload Opportunity 2',
+      AccountId = accountRecord.Id,
+      StageName = 'Prospecting',
+      CloseDate = System.today().addDays(45),
+      Site_Addition__c = false
+    );
+    insert secondOpp;
+
+    List<Map<String, String>> firstUploadRows = new List<Map<String, String>>{
+      new Map<String, String>{
+        'Property Name' => 'Scenario 3 Seed Name',
+        'AddressLine1' => '50 Dedup Street',
+        'City' => 'Dundee',
+        'Postcode' => 'DD1 1AA',
+        'Type' => 'Site',
+        'Market Identifier' => 'MPAN-SCENARIO3-001',
+        'Service Type' => 'Electricity',
+        'Annual Consumption' => '12000',
+        'start_date' => String.valueOf(System.today()),
+        'end_date' => String.valueOf(System.today().addYears(1)),
+        'product' => 'Flex',
+        'tpi_margin' => '2.50',
+        'tax_exemption' => '0',
+        'payment_term' => '30'
+      }
+    };
+    List<Map<String, String>> secondUploadRows = new List<Map<String, String>>{
+      new Map<String, String>{
+        'Property Name' => 'Scenario 3 Retest Name',
+        'AddressLine1' => '50 Dedup Street',
+        'City' => 'Dundee',
+        'Postcode' => 'DD1 1AA',
+        'Type' => 'Site',
+        'Market Identifier' => 'MPRN-SCENARIO3-002',
+        'Service Type' => 'Gas',
+        'Annual Consumption' => '9000',
+        'start_date' => String.valueOf(System.today()),
+        'end_date' => String.valueOf(System.today().addYears(1)),
+        'product' => 'Flex',
+        'tpi_margin' => '2.50',
+        'tax_exemption' => '0',
+        'payment_term' => '30'
+      }
+    };
+
+    Test.startTest();
+    PSPointCsvUploadCtrl.UploadResult firstResult = PSPointCsvUploadCtrl.uploadCsvRows(
+      firstOpp.Id,
+      firstUploadRows
+    );
+    PSPointCsvUploadCtrl.UploadResult secondResult = PSPointCsvUploadCtrl.uploadCsvRows(
+      secondOpp.Id,
+      secondUploadRows
+    );
+    Test.stopTest();
+
+    System.assertEquals(1, firstResult.propertyCount, 'Seed upload creates a Property.');
+    System.assertEquals(
+      0,
+      secondResult.propertyCount,
+      'A later upload on another Opportunity should reuse the existing same-address Property.'
+    );
+    System.assertEquals(
+      1,
+      secondResult.servicePointCount,
+      'The reused Property should still receive the new Service Point.'
+    );
+    System.assertEquals(
+      1,
+      secondResult.associationCount,
+      'The reused Property should still be associated to the second Opportunity.'
+    );
+
+    List<Property__c> properties = [
+      SELECT Id
+      FROM Property__c
+      WHERE
+        Address__Street__s = '50 Dedup Street' AND
+        Address__City__s = 'Dundee' AND
+        Address__PostalCode__s = 'DD1 1AA'
+    ];
+    System.assertEquals(
+      1,
+      properties.size(),
+      'Same address/type should resolve to one Property across Opportunities.'
+    );
+
+    List<Service_Point__c> servicePoints = [
+      SELECT Id, Property__c, Opportunity__c, Market_Identifier__c
+      FROM Service_Point__c
+      WHERE Market_Identifier__c IN ('MPAN-SCENARIO3-001', 'MPRN-SCENARIO3-002')
+    ];
+    System.assertEquals(2, servicePoints.size(), 'Both uploads should keep distinct Service Points.');
+    for (Service_Point__c servicePoint : servicePoints) {
+      System.assertEquals(
+        properties[0].Id,
+        servicePoint.Property__c,
+        'Both Service Points should be linked to the reused Property.'
+      );
+    }
+
+    List<Site__c> associations = [
+      SELECT Id, Property__c, Opportunity__c
+      FROM Site__c
+      WHERE
+        Property__c = :properties[0].Id AND
+        Opportunity__c IN (:firstOpp.Id, :secondOpp.Id)
+    ];
+    System.assertEquals(
+      2,
+      associations.size(),
+      'The single Property should be associated to both Opportunities.'
+    );
+  }
+
+  @isTest
   static void testUploadCsvRowsTriggersJuniferQueueableAndUpdatesPropertyReference() {
     Account baseAccount = [
       SELECT Id
