@@ -10,11 +10,46 @@ const SITE_URL = (
 // which always passes; production must set its own key.
 const TURNSTILE_SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+// Optional presentation overrides, in the same format as the signed-in Quote
+// Wizard (Lightning Out 2.0) launcher's stylingJson.
+const STYLING_JSON = import.meta.env.VITE_QUOTE_WIZARD_STYLING || '';
 const APP_NAME = 'c:PublicQuoteOutApp';
 const COMPONENT_NAME = 'c:publicQuoteWizard';
 const CONTAINER_ID = 'public-quote-wizard';
 
 type Status = 'loading' | 'ready' | 'error';
+
+/**
+ * Lifecycle message shared with the signed-in Quote Wizard launcher: the
+ * component publishes `wizardhostevent` with a JSON string detail. The public
+ * wizard returns its visitor reference, never Salesforce record ids.
+ */
+export type QuoteWizardHostMessage =
+  | { type: 'wizardcomplete'; result: { reference?: string; quoteId?: string; status?: string } }
+  | { type: 'wizardcancel' }
+  | { type: 'wizarderror'; code?: string };
+
+export function parseHostMessage(detail: unknown): QuoteWizardHostMessage | null {
+  if (typeof detail !== 'string') return null;
+  try {
+    const message = JSON.parse(detail);
+    return message && typeof message.type === 'string' ? message : null;
+  } catch {
+    return null;
+  }
+}
+
+interface Props {
+  /** Lightning Out app; defaults to the current wizard's app. */
+  appName?: string;
+  /** Wizard component inside that app. */
+  componentName?: string;
+  /** DOM id of the wizard container; unique per page. */
+  containerId?: string;
+  stylingJson?: string;
+  onComplete?: (result: { reference?: string; quoteId?: string; status?: string }) => void;
+  onError?: (code?: string) => void;
+}
 
 interface LightningComponent {
   set?: (name: string, value: unknown) => void;
@@ -64,11 +99,34 @@ function loadScript(src: string, ready: () => boolean): Promise<void> {
   return scripts.get(src)!;
 }
 
-export const LightningOutPublicQuoteWizard: React.FC = () => {
+export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
+  appName = APP_NAME,
+  componentName = COMPONENT_NAME,
+  containerId = CONTAINER_ID,
+  stylingJson = STYLING_JSON,
+  onComplete,
+  onError
+}) => {
   const [status, setStatus] = useState<Status>('loading');
   const started = useRef(false);
   const captchaRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const component = useRef<LightningComponent | null>(null);
+  const handlers = useRef({ onComplete, onError });
+  handlers.current = { onComplete, onError };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
+    const listener = (event: Event) => {
+      const message = parseHostMessage((event as CustomEvent).detail);
+      if (!message) return;
+      if (message.type === 'wizardcomplete') handlers.current.onComplete?.(message.result);
+      if (message.type === 'wizarderror') handlers.current.onError?.(message.code);
+    };
+    container.addEventListener('wizardhostevent', listener);
+    return () => container.removeEventListener('wizardhostevent', listener);
+  }, []);
 
   useEffect(() => {
     // StrictMode runs effects twice in development; start once.
@@ -77,12 +135,12 @@ export const LightningOutPublicQuoteWizard: React.FC = () => {
 
     const createWizard = (token: string) => {
       window.$Lightning!.use(
-        APP_NAME,
+        appName,
         () => {
           window.$Lightning!.createComponent(
-            COMPONENT_NAME,
-            { captchaToken: token },
-            CONTAINER_ID,
+            componentName,
+            stylingJson ? { captchaToken: token, stylingJson } : { captchaToken: token },
+            containerId,
             (created, createStatus, errorMessage) => {
               if (createStatus === 'SUCCESS') {
                 component.current = created;
@@ -136,7 +194,7 @@ export const LightningOutPublicQuoteWizard: React.FC = () => {
         </p>
       )}
       <div ref={captchaRef} className="mb-4" />
-      <div id={CONTAINER_ID} className="rounded-xl overflow-hidden bg-white" />
+      <div ref={containerRef} id={containerId} className="rounded-xl overflow-hidden bg-white" />
     </div>
   );
 };
