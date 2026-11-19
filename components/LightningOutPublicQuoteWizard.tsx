@@ -27,7 +27,25 @@ type Status = 'loading' | 'ready' | 'error';
 export type QuoteWizardHostMessage =
   | { type: 'wizardcomplete'; result: { reference?: string; quoteId?: string; status?: string } }
   | { type: 'wizardcancel' }
-  | { type: 'wizarderror'; code?: string };
+  | { type: 'wizarderror'; code?: string }
+  | { type: 'wizardtrace'; entry: QuoteWizardTraceEntry };
+
+/**
+ * SPIKE ONLY: one step of how the wizard's components talk, sent when the
+ * host page creates the spike wizard with trace: true. It carries visitor
+ * input, so only test pages turn it on.
+ */
+export interface QuoteWizardTraceEntry {
+  seq: number;
+  at: string;
+  step: string;
+  kind: 'input' | 'state' | 'message' | 'apex' | 'handoff';
+  from: string;
+  to: string;
+  event: string;
+  data: unknown;
+  api?: { calls: string[]; server: string } | null;
+}
 
 export function parseHostMessage(detail: unknown): QuoteWizardHostMessage | null {
   if (typeof detail !== 'string') return null;
@@ -47,6 +65,11 @@ interface Props {
   /** DOM id of the wizard container; unique per page. */
   containerId?: string;
   stylingJson?: string;
+  /** SPIKE ONLY: ask the wizard for wizardtrace messages (see onTrace). */
+  trace?: boolean;
+  onTrace?: (entry: QuoteWizardTraceEntry) => void;
+  /** Layout classes of the outer element. */
+  className?: string;
   onComplete?: (result: { reference?: string; quoteId?: string; status?: string }) => void;
   onError?: (code?: string) => void;
 }
@@ -104,6 +127,9 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
   componentName = COMPONENT_NAME,
   containerId = CONTAINER_ID,
   stylingJson = STYLING_JSON,
+  trace = false,
+  onTrace,
+  className = 'max-w-3xl mx-auto',
   onComplete,
   onError
 }) => {
@@ -112,8 +138,8 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
   const captchaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const component = useRef<LightningComponent | null>(null);
-  const handlers = useRef({ onComplete, onError });
-  handlers.current = { onComplete, onError };
+  const handlers = useRef({ onComplete, onError, onTrace });
+  handlers.current = { onComplete, onError, onTrace };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -123,6 +149,7 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
       if (!message) return;
       if (message.type === 'wizardcomplete') handlers.current.onComplete?.(message.result);
       if (message.type === 'wizarderror') handlers.current.onError?.(message.code);
+      if (message.type === 'wizardtrace') handlers.current.onTrace?.(message.entry);
     };
     container.addEventListener('wizardhostevent', listener);
     return () => container.removeEventListener('wizardhostevent', listener);
@@ -139,7 +166,11 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
         () => {
           window.$Lightning!.createComponent(
             componentName,
-            stylingJson ? { captchaToken: token, stylingJson } : { captchaToken: token },
+            {
+              captchaToken: token,
+              ...(stylingJson ? { stylingJson } : {}),
+              ...(trace ? { trace: true } : {})
+            },
             containerId,
             (created, createStatus, errorMessage) => {
               if (createStatus === 'SUCCESS') {
@@ -182,7 +213,7 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className={className}>
       {status === 'loading' && (
         <p className="text-secondary text-sm" role="status">
           Loading the quote wizard…
