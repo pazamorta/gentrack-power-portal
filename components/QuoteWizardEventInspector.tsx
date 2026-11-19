@@ -52,6 +52,24 @@ export const QuoteWizardEventInspector: React.FC<{
       {[...seen].reverse().map(({ step, component }) => {
         const own = entries.filter((entry) => entry.step === step);
         const input = last(own, (entry) => entry.kind === 'input');
+        // The previous component's output, which the container saved (saveStep)
+        // before showing this component.
+        const index = STEPS.findIndex((item) => item.step === step);
+        const previous = index > 0 ? STEPS[index - 1] : undefined;
+        const previousOutput = previous
+          ? (last(entries, (entry) => entry.step === previous.step && entry.kind === 'state')?.data as
+              | { state?: unknown }
+              | undefined)?.state
+          : undefined;
+        const inputValue =
+          input || previous
+            ? {
+                ...((input?.data as object) || {}),
+                ...(previous
+                  ? { fromPrevious: { component: previous.component, data: previousOutput ?? null } }
+                  : {})
+              }
+            : undefined;
         const output = last(own, (entry) => entry.kind === 'state');
         const apexNames = [...new Set(own.filter((entry) => entry.kind === 'apex').map((entry) => entry.event))];
         return (
@@ -65,7 +83,7 @@ export const QuoteWizardEventInspector: React.FC<{
             </p>
 
             <p className="mt-2 text-xs font-semibold text-slate-300">Input</p>
-            <Json value={input?.data} />
+            <Json value={inputValue} />
 
             <p className="mt-2 text-xs font-semibold text-slate-300">Output</p>
             <Json value={(output?.data as { state?: unknown } | undefined)?.state} />
