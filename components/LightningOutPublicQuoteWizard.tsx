@@ -70,6 +70,14 @@ interface Props {
   onTrace?: (entry: QuoteWizardTraceEntry) => void;
   /** Layout classes of the outer element. */
   className?: string;
+  /** Extra attributes for createComponent (SPIKE 2: launchKey, recordId). */
+  attributes?: Record<string, unknown>;
+  /** Run Cloudflare Turnstile and pass captchaToken (default true). */
+  captcha?: boolean;
+  /** Every host message the component sends, for test pages. */
+  onMessage?: (message: QuoteWizardHostMessage) => void;
+  /** Lightning Out load or createComponent failure, with its message. */
+  onLoadError?: (message: string) => void;
   onComplete?: (result: { reference?: string; quoteId?: string; status?: string }) => void;
   onError?: (code?: string) => void;
 }
@@ -130,6 +138,10 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
   trace = false,
   onTrace,
   className = 'max-w-3xl mx-auto',
+  attributes,
+  captcha = true,
+  onMessage,
+  onLoadError,
   onComplete,
   onError
 }) => {
@@ -138,8 +150,8 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
   const captchaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const component = useRef<LightningComponent | null>(null);
-  const handlers = useRef({ onComplete, onError, onTrace });
-  handlers.current = { onComplete, onError, onTrace };
+  const handlers = useRef({ onComplete, onError, onTrace, onMessage, onLoadError });
+  handlers.current = { onComplete, onError, onTrace, onMessage, onLoadError };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -147,6 +159,7 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
     const listener = (event: Event) => {
       const message = parseHostMessage((event as CustomEvent).detail);
       if (!message) return;
+      handlers.current.onMessage?.(message);
       if (message.type === 'wizardcomplete') handlers.current.onComplete?.(message.result);
       if (message.type === 'wizarderror') handlers.current.onError?.(message.code);
       if (message.type === 'wizardtrace') handlers.current.onTrace?.(message.entry);
@@ -167,7 +180,8 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
           window.$Lightning!.createComponent(
             componentName,
             {
-              captchaToken: token,
+              ...(captcha ? { captchaToken: token } : {}),
+              ...(attributes || {}),
               ...(stylingJson ? { stylingJson } : {}),
               ...(trace ? { trace: true } : {})
             },
@@ -178,6 +192,7 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
                 setStatus('ready');
               } else {
                 console.error('Lightning Out createComponent failed:', createStatus, errorMessage);
+                handlers.current.onLoadError?.(`${createStatus}: ${errorMessage}`);
                 setStatus('error');
               }
             }
@@ -186,6 +201,17 @@ export const LightningOutPublicQuoteWizard: React.FC<Props> = ({
         SITE_URL
       );
     };
+
+    if (!captcha) {
+      loadScript(`${SITE_URL}/lightning/lightning.out.js`, () => Boolean(window.$Lightning))
+        .then(() => createWizard(''))
+        .catch((error) => {
+          console.error(error);
+          handlers.current.onLoadError?.(String(error));
+          setStatus('error');
+        });
+      return;
+    }
 
     Promise.all([
       loadScript(`${SITE_URL}/lightning/lightning.out.js`, () => Boolean(window.$Lightning)),

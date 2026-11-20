@@ -17,6 +17,7 @@ import { GetStartedPage } from './pages/GetStartedPage';
 import { OpportunityRequestPage } from './pages/OpportunityRequestPage';
 import { QuoteWizardPage } from './pages/QuoteWizardPage';
 import { QuoteWizardSpikePage } from './pages/QuoteWizardSpikePage';
+import { QuoteWizardSpike2Page } from './pages/QuoteWizardSpike2Page';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { LoginPage } from './pages/LoginPage';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -52,6 +53,7 @@ const AppContent: React.FC = () => {
               <Route path="/opportunity-request" element={<OpportunityRequestPage />} />
               <Route path="/quote-wizard" element={<QuoteWizardPage />} />
               <Route path="/quote-wizard-spike" element={<QuoteWizardSpikePage />} />
+              <Route path="/quote-wizard-spike2" element={<QuoteWizardSpike2Page />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
               <Route path="*" element={<div className="pt-32 text-center text-white">404 - Page Not Found: {location.pathname}</div>} />
