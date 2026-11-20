@@ -6,7 +6,8 @@ import {
 } from '../components/LightningOutPublicQuoteWizard';
 import { QuoteWizardVersionBanner } from '../components/QuoteWizardVersionBanner';
 
-const DEFAULT_LAUNCH_KEY = 'OPPORTUNITY_QUOTE';
+// The only journey with Allow_Guest__c; OPPORTUNITY_QUOTE and _B2C are hidden from guests (NO_AVAILABLE_JOURNEY).
+const DEFAULT_LAUNCH_KEY = 'GUEST_QUOTE_SPIKE2';
 const MAX_EVENTS = 100;
 
 interface LogEntry {
@@ -22,7 +23,7 @@ interface LogEntry {
  */
 export const QuoteWizardSpike2Page: React.FC = () => {
   const [params] = useSearchParams();
-  const launchKey = params.get('launchKey') || '';
+  const launchKey = params.get('launchKey') || DEFAULT_LAUNCH_KEY;
   const recordId = params.get('recordId') || '';
   const [form, setForm] = useState({ launchKey: launchKey || DEFAULT_LAUNCH_KEY, recordId });
   const [log, setLog] = useState<LogEntry[]>([]);
