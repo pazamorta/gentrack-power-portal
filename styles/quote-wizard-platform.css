@@ -330,8 +330,8 @@
 @media (max-width: 640px) {
   .qw-platform.qw-platform.qw-platform .slds-path__item.slds-path__item::after {
     top: 0.875rem;
-    left: calc(50% + 1.25rem);
-    right: calc(-50% + 1.25rem);
+    left: calc(50% + 1.125rem);
+    right: calc(-50% + 1.125rem);
   }
 }
 /* SLDS colours the current step's ::after; the line is grey until the step is done */
@@ -422,7 +422,8 @@
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .qw-platform.qw-platform .slds-path__stage {
   position: absolute;
@@ -439,8 +440,25 @@
   display: none;
 }
 
-/* Small screens: smaller circles; the step names stay */
+/*
+ * Small screens: smaller circles, and the step names are hidden visually
+ * (they would break mid-word in 50px columns). The step heading below
+ * names the current step; screen readers still read every name.
+ */
 @media (max-width: 640px) {
+  .qw-platform.qw-platform .slds-path__title,
+  .qw-platform.qw-platform .slds-path__item.slds-is-complete .slds-path__title,
+  .qw-platform.qw-platform .slds-path__item.slds-is-complete:hover .slds-path__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .qw-platform.qw-platform .slds-path__link {
     font-size: 0.6875rem;
   }
@@ -451,8 +469,8 @@
   }
   .qw-platform.qw-platform .slds-path__item::after {
     top: 0.875rem;
-    left: calc(50% + 1.25rem);
-    right: calc(-50% + 1.25rem);
+    left: calc(50% + 1.125rem);
+    right: calc(-50% + 1.125rem);
   }
 }
 
