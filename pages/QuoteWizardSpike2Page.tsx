@@ -81,15 +81,15 @@ export const QuoteWizardSpike2Page: React.FC = () => {
         </div>
       </section>
 
-      <section className="pt-16 pb-12 px-4 md:px-8">
-        <div className="max-w-4xl mx-auto">
+      <section className="pt-16 pb-16 px-4 md:px-8">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-4xl md:text-5xl font-['Space_Grotesk'] font-bold mb-4 text-gray-900">Your quote</h2>
             <p className="text-xl text-gray-600">Fill in the steps below. You can go back to any step before you get your price.</p>
           </div>
 
           {/* The Salesforce Quote Wizard, themed by styles/quote-wizard-platform.css */}
-          <div className="qw-platform bg-white border border-gray-200 shadow-xl rounded-2xl p-4 md:p-10">
+          <div className="qw-platform bg-white border border-gray-200 shadow-xl rounded-3xl px-5 py-8 md:px-14 md:py-12">
             {launchKey ? (
               <LightningOutPublicQuoteWizard
                 appName="c:QuoteWizardSpike2OutApp"
