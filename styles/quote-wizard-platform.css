@@ -313,6 +313,27 @@
   transform: none;
   transition: background-color 0.5s ease;
 }
+/*
+ * SLDS positions the current step's ::after (left: 1.125rem on the first
+ * step), which pulls the line out to the left of circle 1. Pin the line's
+ * geometry for every state, with enough weight to win.
+ */
+.qw-platform.qw-platform.qw-platform .slds-path__item.slds-path__item::after {
+  top: 1.375rem;
+  left: calc(50% + 2rem);
+  right: calc(-50% + 2rem);
+  width: auto;
+  height: 0.25rem;
+  margin: 0;
+  transform: none;
+}
+@media (max-width: 640px) {
+  .qw-platform.qw-platform.qw-platform .slds-path__item.slds-path__item::after {
+    top: 0.875rem;
+    left: calc(50% + 1.25rem);
+    right: calc(-50% + 1.25rem);
+  }
+}
 /* SLDS colours the current step's ::after; the line is grey until the step is done */
 .qw-platform.qw-platform.qw-platform .slds-path__item::after,
 .qw-platform.qw-platform.qw-platform .slds-path__item.slds-is-current::after,
