@@ -9,8 +9,10 @@ import '../styles/quote-wizard-platform.css';
 
 const HERO_BG = '/gentrack-power-portal/customer/hero-bg.png';
 
-// The only journey with Allow_Guest__c; OPPORTUNITY_QUOTE and _B2C are hidden from guests (NO_AVAILABLE_JOURNEY).
-const DEFAULT_LAUNCH_KEY = 'GUEST_QUOTE_SPIKE2';
+// The configured B2C journey (QW_B2C_Demo) the New sale utility item runs. A site guest
+// runs it as a New sale through the Salesforce guest bridge (QuoteWizardGuestBridge).
+// GUEST_QUOTE_SPIKE2 (the reduced guest copy) still opens with ?launchKey=.
+const DEFAULT_LAUNCH_KEY = 'OPPORTUNITY_QUOTE_B2C';
 const MAX_EVENTS = 100;
 
 interface LogEntry {
